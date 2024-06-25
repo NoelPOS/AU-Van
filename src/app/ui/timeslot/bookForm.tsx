@@ -23,6 +23,7 @@ import { useSearchParams } from "next/navigation";
 
 export default function BookForm({ date }: { date: Date }) {
   const searchParams = useSearchParams();
+
   return (
     <Card className="w-[450px]">
       <CardHeader>
@@ -30,7 +31,7 @@ export default function BookForm({ date }: { date: Date }) {
           {new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(date)},{" "}
           {date.getDate()} {date.toLocaleString("default", { month: "long" })}
           {" -> "}
-          {searchParams.get("time")}:00
+          {searchParams.get("time")}
         </CardTitle>
         <CardDescription>
           If you entered wrong phone number the driver will be unable to pick
