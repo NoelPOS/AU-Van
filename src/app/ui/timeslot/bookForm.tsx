@@ -20,18 +20,16 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useSearchParams } from "next/navigation";
+import DisplayDate from "@/app/ui/display-date/display-date";
+import Link from "next/link";
 
 export default function BookForm({ date }: { date: Date }) {
-  const searchParams = useSearchParams();
-
   return (
     <Card className="w-[450px]">
       <CardHeader>
         <CardTitle>
-          {new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(date)},{" "}
-          {date.getDate()} {date.toLocaleString("default", { month: "long" })}
-          {" -> "}
-          {searchParams.get("time")}
+          {/* TODO(jan): Display hours:minutes */}
+          <DisplayDate /> {" -> "}
         </CardTitle>
         <CardDescription>
           If you entered wrong phone number the driver will be unable to pick
@@ -84,7 +82,9 @@ export default function BookForm({ date }: { date: Date }) {
         </form>
       </CardContent>
       <CardFooter className="flex justify-between">
-        <Button variant="outline">Cancel</Button>
+        <Link href="/">
+          <Button variant="outline">Cancel</Button>
+        </Link>
         <Button>Book</Button>
       </CardFooter>
     </Card>
