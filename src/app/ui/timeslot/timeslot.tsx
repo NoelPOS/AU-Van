@@ -6,8 +6,9 @@ import Link from "next/link";
 import { timeslot, routes } from "@/app/lib/data";
 
 export default function TimeSlot({ from, to }: { from: string; to: string }) {
-  if (from === "" || to === "") {
-    return;
+  if (from === "" && to === "") {
+    from = "Assumption University";
+    to = "Mega Bangna";
   }
 
   const indexObject = `${from.toLowerCase().split(" ").join("_")}_to_${to.toLowerCase().split(" ").join("_")}`;
@@ -20,7 +21,7 @@ export default function TimeSlot({ from, to }: { from: string; to: string }) {
           <span className="text-rose-500">{to}</span>
         </h4>
         <div className="flex flex-col gap-8">
-          {routes[indexObject].time.map((arrTime: string[], index: number) => {
+          {routes[indexObject]?.time.map((arrTime: string[], index: number) => {
             return (
               <div className="flex gap-3" key={index}>
                 {arrTime.map((time) => {
