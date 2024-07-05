@@ -1,4 +1,3 @@
-import TimeSlot from "@/app/ui/timeslot/timeslot";
 import NavBar from "@/app/ui/navbar/navbar";
 import DestinationSelection from "@/app/ui/destination-selection/destination-selection";
 
