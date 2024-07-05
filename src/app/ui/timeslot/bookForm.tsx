@@ -55,7 +55,7 @@ export default function BookForm({ date }: { date: Date }) {
               <Label className="w-16" htmlFor="name">
                 Phone
               </Label>
-              <Input id="name" placeholder="+66912873212" />
+              <Input id="name" placeholder="+66912873212" type="tel" />
             </div>
             <div className="flex items-center gap-4">
               <Label className="w-16" htmlFor="name">
