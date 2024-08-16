@@ -1,44 +1,65 @@
-"use client";
+'use client'
 
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { timeslot, routes } from "@/app/lib/data";
+import { useState, useEffect } from 'react'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import Link from 'next/link'
 
 export default function TimeSlot({ from, to }: { from: string; to: string }) {
-  if (from === "" && to === "") {
-    from = "Assumption University";
-    to = "Mega Bangna";
-  }
+  const [times, setTimes] = useState<string[]>([])
 
-  const indexObject = `${from.toLowerCase().split(" ").join("_")}_to_${to.toLowerCase().split(" ").join("_")}`;
+  useEffect(() => {
+    if (!from || !to) {
+      from = 'Assumption University'
+      to = 'Mega Bangna'
+    }
+
+    const indexObject = `${from.toLowerCase().split(' ').join('_')}_to_${to
+      .toLowerCase()
+      .split(' ')
+      .join('_')}`
+
+    const fetchTimes = async () => {
+      try {
+        const res = await fetch(`/api/auth/getbookings?from=${from}&to=${to}`)
+        const data = await res.json()
+
+        if (data[indexObject]?.time) {
+          setTimes(data[indexObject].time)
+        } else {
+          setTimes([]) // No times found
+        }
+      } catch (error) {
+        console.error('Failed to fetch times:', error)
+      }
+    }
+
+    fetchTimes()
+  }, [from, to])
 
   return (
     <>
-      <Card className="flex flex-col gap-5 p-6">
-        <h4 className="text-xl">
-          <span className="text-yellow-500">{from}</span> &rarr;{" "}
-          <span className="text-rose-500">{to}</span>
+      <Card className='flex flex-col gap-5 p-6 w-1/2 mx-auto'>
+        <h4 className='text-xl'>
+          <span className='text-yellow-500'>{from}</span> &rarr;{' '}
+          <span className='text-rose-500'>{to}</span>
         </h4>
-        <div className="flex flex-col gap-8">
-          {routes[indexObject]?.time.map((arrTime: string[], index: number) => {
-            return (
-              <div className="flex gap-3" key={index}>
-                {arrTime.map((time) => {
-                  return (
-                    <Link
-                      key={time}
-                      href={{ pathname: "book", query: { time: time } }}
-                    >
-                      <Button>{time}</Button>
-                    </Link>
-                  );
-                })}
-              </div>
-            );
-          })}
+        <div className='w-4/6 mx-auto'>
+          {times.length > 0 ? (
+            times.map((time, index) => (
+              <Link
+                className='mx-3'
+                key={index}
+                href={{ pathname: 'book', query: { time: time } }}
+              >
+                <Button>{time}</Button>
+              </Link>
+            ))
+          ) : (
+            <p>No available times for this route.</p>
+          )}
         </div>
       </Card>
     </>
-  );
+  )
 }
