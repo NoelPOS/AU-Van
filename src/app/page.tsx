@@ -8,7 +8,6 @@ import Image from 'next/image'
 
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
-import { signOut } from 'next-auth/react'
 
 export default function Home() {
   const { status } = useSession()

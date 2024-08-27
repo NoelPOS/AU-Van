@@ -21,8 +21,8 @@ export default function NavBar() {
       </div>
 
       <div className='flex gap-10 underline underline-offset-8'>
-        <Link href='#'>Home</Link>
-        <Link href='#'>FAQ</Link>
+        <Link href='/'>Home</Link>
+        <Link href='/mybookings'>My Bookings</Link>
         <Link href='#'>Contact</Link>
         <button
           onClick={() => {

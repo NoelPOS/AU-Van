@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
+
 export default function TimeSlot({ from, to }: { from: string; to: string }) {
   const [times, setTimes] = useState<string[]>([])
 
@@ -39,20 +40,22 @@ export default function TimeSlot({ from, to }: { from: string; to: string }) {
 
   return (
     <>
-      <Card className='flex flex-col gap-5 p-6 w-1/2 mx-auto'>
+      <Card className='flex flex-col gap-5 p-6 w-fullmx-auto'>
         <h4 className='text-xl'>
           <span className='text-yellow-500'>{from}</span> &rarr;{' '}
           <span className='text-rose-500'>{to}</span>
         </h4>
-        <div className='w-4/6 mx-auto'>
+        <div className='w-4/6 mx-auto flex items-center justify-center gap-4'>
           {times.length > 0 ? (
             times.map((time, index) => (
               <Link
-                className='mx-3'
                 key={index}
-                href={{ pathname: 'book', query: { time: time } }}
+                href={{
+                  pathname: 'book',
+                  query: { time: time, from: from, to: to },
+                }}
               >
-                <Button>{time}</Button>
+                <Button className='my-3'>{time}</Button>
               </Link>
             ))
           ) : (

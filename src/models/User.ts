@@ -9,6 +9,7 @@ export interface UserDocument {
   _id: string
   createdAt: Date
   updatedAt: Date
+  isAdmin: boolean
 }
 
 const UserSchema = new Schema<UserDocument>(
@@ -35,7 +36,11 @@ const UserSchema = new Schema<UserDocument>(
     },
     phone: {
       type: String,
-      default: '',
+      required: [true, 'Phone is required'],
+    },
+    isAdmin: {
+      type: Boolean,
+      default: false,
     },
   },
   {

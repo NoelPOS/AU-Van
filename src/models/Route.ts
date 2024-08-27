@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose'
 
-interface IRoute extends Document {
+export interface IRoute extends Document {
   from: string
   to: string
   time: string[]

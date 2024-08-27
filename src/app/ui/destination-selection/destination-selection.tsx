@@ -1,5 +1,5 @@
-"use client";
-import { useState, useEffect } from "react";
+'use client'
+import { useState, useEffect } from 'react'
 
 import {
   Select,
@@ -7,47 +7,46 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select'
 
-import TimeSlot from "@/app/ui/timeslot/timeslot";
+import TimeSlot from '@/app/ui/timeslot/timeslot'
 
 export default function DestinationSelection() {
   const data = {
-    assumption_university: ["Siam Paragon", "Mega Bangna"],
-    siam_paragon: ["Assumption University"],
-    mega_bangna: ["Assumption University"],
-  };
-  const [from, setFrom] = useState<string>("");
-  const [to, setTo] = useState<string>("");
-  const [selectedFROM, setSelectedFROM] = useState<boolean>(false);
+    assumption_university: ['Siam Paragon', 'Mega Bangna'],
+    siam_paragon: ['Assumption University'],
+    mega_bangna: ['Assumption University'],
+  }
+  const [from, setFrom] = useState<string>('Assumption University')
+  const [to, setTo] = useState<string>('Siam Paragon')
+  const [selectedFROM, setSelectedFROM] = useState<boolean>(true)
 
   function FROMhandleValueChange(value: string): void {
-    setFrom(value);
-    setSelectedFROM(true);
-    setTo("");
+    setFrom(value)
+    setSelectedFROM(true)
+    setTo('')
   }
 
   function TOhandleValueChange(value: string): void {
-    setTo(value);
+    setTo(value)
   }
 
   function toTitleCase(str: string) {
     return str
-      .split("_")
-      .join(" ")
+      .split('_')
+      .join(' ')
       .replace(
         /\w\S*/g,
-        (text) =>
-          text.charAt(0).toUpperCase() + text.substring(1).toLowerCase(),
-      );
+        (text) => text.charAt(0).toUpperCase() + text.substring(1).toLowerCase()
+      )
   }
 
   return (
     <>
-      <div className="flex justify-center items-center gap-5">
+      <div className='flex justify-center items-center gap-5'>
         <Select value={from} onValueChange={FROMhandleValueChange}>
-          <SelectTrigger className="lg:w-[200px] w-[150px]">
-            <SelectValue placeholder="From" />
+          <SelectTrigger className='lg:w-[200px] w-[150px]'>
+            <SelectValue placeholder='From' />
           </SelectTrigger>
           <SelectContent>
             {Object.keys(data).map((each) => {
@@ -55,7 +54,7 @@ export default function DestinationSelection() {
                 <SelectItem key={each} value={toTitleCase(each)}>
                   {toTitleCase(each)}
                 </SelectItem>
-              );
+              )
             })}
           </SelectContent>
         </Select>
@@ -65,26 +64,26 @@ export default function DestinationSelection() {
           value={to}
           onValueChange={TOhandleValueChange}
         >
-          <SelectTrigger className="lg:w-[200px] w-[150px]">
-            <SelectValue placeholder="To" />
+          <SelectTrigger className='lg:w-[200px] w-[150px]'>
+            <SelectValue placeholder='To' />
           </SelectTrigger>
           <SelectContent>
             {data[
-              from.toLowerCase().split(" ").join("_") as keyof typeof data
+              from.toLowerCase().split(' ').join('_') as keyof typeof data
             ]?.map((each: string) => {
               return (
                 <SelectItem key={each} value={each}>
                   {each}
                 </SelectItem>
-              );
+              )
             })}
           </SelectContent>
         </Select>
       </div>
 
-      <div className="flex">
+      <div className='flex'>
         <TimeSlot from={from} to={to} />
       </div>
     </>
-  );
+  )
 }
