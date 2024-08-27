@@ -42,3 +42,34 @@ export async function POST(req: NextRequest) {
     )
   }
 }
+
+export async function GET(req: NextRequest) {
+  await connectDB()
+  const userid = req.nextUrl.searchParams.get('userid')
+  console.log('userid:', userid)
+
+  if (!userid) {
+    return NextResponse.json(
+      { error: 'Missing required fields' },
+      { status: 400 }
+    )
+  }
+
+  try {
+    const bookings = await Booking.find({ userid })
+    if (bookings.length === 0) {
+      return NextResponse.json(
+        { message: 'No bookings found for this user' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json(bookings)
+  } catch (error) {
+    console.error('Error fetching bookings:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
