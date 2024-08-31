@@ -42,15 +42,12 @@ const Signup = (props: Props) => {
     event.preventDefault()
     try {
       const formData = new FormData(event.currentTarget)
-      const signupResponse = await axios.post(
-        `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/signup`,
-        {
-          email: formData.get('email'),
-          password: formData.get('password'),
-          name: formData.get('name'),
-          phone: formData.get('phone'),
-        }
-      )
+      const signupResponse = await axios.post('/api/auth/signup', {
+        email: formData.get('email'),
+        password: formData.get('password'),
+        name: formData.get('name'),
+        // phone: formData.get('phone'),
+      })
 
       const res = await signIn('credentials', {
         email: signupResponse.data.email,

@@ -36,7 +36,7 @@ const UserSchema = new Schema<UserDocument>(
     },
     phone: {
       type: String,
-      required: [true, 'Phone is required'],
+      required: false,
     },
     isAdmin: {
       type: Boolean,
