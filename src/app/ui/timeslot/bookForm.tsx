@@ -142,7 +142,7 @@ export default function BookForm({ date }: { date: Date }) {
             </div>
           </div>
           <CardFooter className='flex justify-between'>
-            <Link href='/'>
+            <Link href='/routes'>
               <Button variant='outline'>Cancel</Button>
             </Link>
             <Button type='submit'>Book</Button>

@@ -57,7 +57,11 @@ export default function Home() {
       </main>
     );
   } else if (status === "loading") {
-    return <span className="text-[#888] text-sm mt-7">Loading...</span>;
+    return (
+      <div className="flex flex-col justify-center items-center h-screen">
+        <h1>Loading...</h1>
+      </div>
+    )
   } else {
     return (
       <div className="flex flex-col justify-center items-center h-screen ">
