@@ -23,14 +23,15 @@ export default function NavBar() {
       <div className='flex gap-10 underline underline-offset-8'>
         <Link href='/'>Home</Link>
         <Link href='/mybookings'>My Bookings</Link>
-        <Link href='#'>Contact</Link>
-        <button
+        <Link href='/profile'>Profile</Link>
+        <Link href='/'><button
           onClick={() => {
             signOut()
           }}
         >
           Logout here
-        </button>
+        </button></Link>
+        
       </div>
     </>
   )

@@ -63,7 +63,6 @@ export async function GET(req: NextRequest) {
         { status: 404 }
       )
     }
-
     return NextResponse.json(bookings)
   } catch (error) {
     console.error('Error fetching bookings:', error)
