@@ -1,86 +1,156 @@
-import React, { Dispatch, SetStateAction } from "react";
-import Image from "next/image";
-import Link from "next/link";
+'use client'
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FormEvent, useEffect, useState } from 'react'
+import { signIn } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
+import { BiLogoGoogle } from 'react-icons/bi'
+import { BiSolidShow } from 'react-icons/bi'
+import { BiSolidHide } from 'react-icons/bi'
 
-import Car from "../assets/img/Car.png";
-import Logo from "../assets/img/Logo.png";
+import React, { Dispatch, SetStateAction } from 'react'
+import Image from 'next/image'
+import Link from 'next/link'
+
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+
+import Car from '../assets/img/Car.png'
+import Logo from '../assets/img/Logo.png'
 
 interface Props {
-  showLogin: boolean;
-  setShowLogin: Dispatch<SetStateAction<boolean>>;
+  showLogin: boolean
+  setShowLogin: Dispatch<SetStateAction<boolean>>
 }
 
 const Login = (props: Props) => {
+  const [error, setError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const router = useRouter()
+  const { data: session } = useSession()
+
+  const labelStyles = 'w-full text-sm'
+
+  useEffect(() => {
+    if (session?.user) {
+      router.push('/')
+    }
+  }, [session, router])
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const formData = new FormData(event.currentTarget)
+    const res = await signIn('credentials', {
+      email: formData.get('email'),
+      password: formData.get('password'),
+      redirect: false,
+    })
+
+    if (res?.error) {
+      setError(res.error as string)
+    }
+
+    if (!res?.error) {
+      return router.push('/')
+    }
+  }
+
   return (
-    <div className="w-full lg:grid lg:min-h-[500px] lg:grid-cols-2 xl:min-h-[580px] flex items-center justify-center ">
-      <div className="hidden bg-muted lg:block">
+    <div className='w-full lg:grid lg:min-h-[500px] lg:grid-cols-2 xl:min-h-[580px] flex items-center justify-center '>
+      <div className='hidden bg-muted lg:block'>
         <Image
           src={Car}
-          alt="Image"
-          className=" object-cover dark:brightness-[0.2] dark:grayscale rounded-lg"
+          alt='Image'
+          className=' object-cover dark:brightness-[0.2] dark:grayscale rounded-lg'
         />
       </div>
-      <div className="flex items-center justify-center py-12">
-        <div className="mx-auto grid w-[350px] gap-6">
-          <div className="grid gap-2 text-center">
-            <div className="flex flex-col items-center justify-center">
+      <div className='flex items-center justify-center py-12'>
+        <div className='mx-auto grid w-[350px] gap-6'>
+          <div className='grid gap-2 text-center'>
+            <div className='flex flex-col items-center justify-center'>
               <Image
                 src={Logo}
-                alt="Image"
-                className=" object-cover dark:brightness-[0.2] dark:grayscale rounded-lg"
+                alt='Image'
+                className=' object-cover dark:brightness-[0.2] dark:grayscale rounded-lg'
               />
-              <h2 className="text-3xl font-bold">AU Van Service </h2>
+              <h2 className='text-3xl font-bold'>AU Van Service </h2>
             </div>
           </div>
-          <div className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="m@example.com"
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <div className="flex items-center">
-                <Label htmlFor="password">Password</Label>
-                {/* <Link
-                  href='/forgot-password'
-                  className='ml-auto inline-block text-sm underline'
-                >
-                  Forgot your password?
-                </Link> */}
+          <form onSubmit={handleSubmit}>
+            {error && <div className=''>{error}</div>}
+            <div className='grid gap-4'>
+              <div className='grid gap-2'>
+                <Label htmlFor='email'>Email</Label>
+                <Input
+                  id='email'
+                  type='email'
+                  placeholder='m@example.com'
+                  name='email'
+                  required
+                />
               </div>
-              <Input id="password" type="password" required />
+              <div className='grid gap-2'>
+                <div className='flex items-center'>
+                  <Label htmlFor='password'>Password</Label>
+                </div>
+                <div className='flex items-center'>
+                  <Input
+                    id='password'
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    name='password'
+                  />
+                  <button
+                    className='border border-solid border-[#afacac] rounded flex items-center justify-center transition duration-150 ease h-full w-1/12'
+                    onClick={(e) => {
+                      e.preventDefault()
+                      setShowPassword(!showPassword)
+                    }}
+                  >
+                    {showPassword ? <BiSolidHide /> : <BiSolidShow />}
+                  </button>
+                </div>
+              </div>
+              <Button type='submit' className='w-full'>
+                Login
+              </Button>
             </div>
-            <Button type="submit" className="w-full">
-              Login
-            </Button>
-            {/* <Button variant='outline' className='w-full'>
-              Login with Google
-            </Button> */}
-          </div>
-          <div className="mt-4 text-center text-sm">
-            Don&apos;t have an account?{" "}
-            <Link
-              href="#"
-              className="underline"
-              onClick={() => {
-                props.setShowLogin(false);
+            <div className='w-full h-10	relative flex items-center justify-center'>
+              <div className='absolute h-px w-full top-2/4 bg-[#242424]'></div>
+              <p className='w-8	h-6 bg-white z-10 flex items-center justify-center'>
+                or
+              </p>
+            </div>
+
+            <button
+              className='flex mx-auto py-2 px-4 text-sm	 items-center rounded text-999 bg-white
+              border border-solid border-[#242424] transition duration-150 ease gap-3'
+              onClick={(e) => {
+                e.preventDefault()
+                signIn('google')
               }}
             >
-              Sign up
-            </Link>
-          </div>
+              <BiLogoGoogle className='text-2xl' /> Sign in with Google
+            </button>
+
+            <div className='mt-4 text-center text-sm'>
+              Don&apos;t have an account?{' '}
+              <Link
+                href='#'
+                className='underline'
+                onClick={() => {
+                  props.setShowLogin(false)
+                }}
+              >
+                Sign up
+              </Link>
+            </div>
+          </form>
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Login;
+export default Login
