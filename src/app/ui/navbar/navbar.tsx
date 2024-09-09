@@ -1,5 +1,6 @@
 'use client'
 
+import { use, useState, useEffect } from 'react'
 import logo from '@/app/navbar/logo.png'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -23,15 +24,16 @@ export default function NavBar() {
       <div className='flex gap-10 underline underline-offset-8'>
         <Link href='/'>Home</Link>
         <Link href='/mybookings'>My Bookings</Link>
-        <Link href='/profile'>Profile</Link>
-        <Link href='/'><button
-          onClick={() => {
-            signOut()
-          }}
-        >
-          Logout here
-        </button></Link>
-        
+        <Link href='/profile/'>Profile</Link>
+        <Link href='/'>
+          <button
+            onClick={() => {
+              signOut()
+            }}
+          >
+            Logout here
+          </button>
+        </Link>
       </div>
     </>
   )
