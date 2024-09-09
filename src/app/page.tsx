@@ -33,7 +33,7 @@ export default function Home() {
 
                                 <div className="lg:py-24">
                                     <h2 className="text-3xl font-bold sm:text-4xl">
-                                        Pick a time slot
+                                        AU Vans
                                     </h2>
 
                                     <p className="mt-4 text-gray-600">
@@ -54,7 +54,7 @@ export default function Home() {
                                         href="/routes"
                                         className="mt-8 inline-block rounded bg-black px-12 py-3 text-sm font-medium text-white transition hover:bg-black focus:outline-none focus:ring focus:ring-yellow-400"
                                     >
-                                        Get Started Today
+                                        Check timeslot
                                     </Link>
                                 </div>
                             </div>
