@@ -75,7 +75,7 @@ export default function Home() {
         </div>
         <Link
           href='/auth'
-          className='text-[#888] text-sm text-999 mt-7 transition duration-150 ease hover:text-white'
+          className='text-[#888] text-sm text-999 mt-7 transition duration-150 ease hover:text-gray-800'
         >
           Login here
         </Link>
