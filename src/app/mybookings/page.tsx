@@ -38,7 +38,9 @@ export default function MyBookings() {
 
     return (
         <>
-            <NavBar />
+            <div className="flex justify-between items-center mb-10">
+                <NavBar />
+            </div>
             <div className="p-4">
                 <h1 className="text-2xl font-bold mb-4">My Bookings</h1>
 
