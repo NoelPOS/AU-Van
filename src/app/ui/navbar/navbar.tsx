@@ -1,8 +1,8 @@
 'use client'
 
-import logo from '@/app/navbar/logo.png'
 import Image from 'next/image'
 import Link from 'next/link'
+import { Button } from '@/components/ui/button'
 
 import { signOut } from 'next-auth/react'
 
@@ -20,18 +20,18 @@ export default function NavBar() {
                 </Link>
             </div>
 
-            <div className="flex gap-10 underline underline-offset-8">
+            <div className="flex gap-10 underline underline-offset-8 items-center">
                 <Link href="/">Home</Link>
                 <Link href="/mybookings">My Bookings</Link>
                 <Link href="/profile">Profile</Link>
                 <Link href="/">
-                    <button
+                    <Button
                         onClick={() => {
                             signOut()
                         }}
                     >
-                        Logout here
-                    </button>
+                        Logout
+                    </Button>
                 </Link>
             </div>
         </>
