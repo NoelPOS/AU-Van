@@ -3,6 +3,7 @@ import React, { FormEvent, use, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { useSession } from 'next-auth/react'
 import axios from 'axios'
+import NavBar from '@/app/ui/navbar/navbar'
 
 const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
   event.preventDefault()
@@ -82,18 +83,21 @@ const Profile = () => {
           />
         </div>
 
-        <div className='flex flex-col py-3'>
-          <label className='font-medium text-gray-900' htmlFor='email'>
-            Email
-          </label>
-          <input
-            className='text-gray-700 border rounded p-1'
-            type='text'
-            id='email'
-            name='email'
-            defaultValue={userData?.email}
-          />
-        </div>
+                    <div className="flex flex-col py-3">
+                        <label
+                            className="font-medium text-gray-900"
+                            htmlFor="email"
+                        >
+                            Email
+                        </label>
+                        <input
+                            className="text-gray-700 border rounded p-1"
+                            type="text"
+                            id="email"
+                            name="email"
+                            defaultValue={userData?.email}
+                        />
+                    </div>
 
         <div className='flex flex-col py-3'>
           <label className='font-medium text-gray-900' htmlFor='oldpwd'>
