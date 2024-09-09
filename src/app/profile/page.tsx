@@ -3,6 +3,7 @@ import React, { FormEvent, use, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { useSession } from 'next-auth/react'
 import axios from 'axios'
+import NavBar from '@/app/ui/navbar/navbar'
 
 const handleSubmit = async (
     event: FormEvent<HTMLFormElement>,
@@ -37,70 +38,78 @@ const Profile = () => {
     const [password, setPassword] = React.useState('')
 
     return (
-        <div className="flex items-center justify-center w-full h-screen">
-            <form className="divide-y divide-gray-100 text-sm w-full max-w-md">
-                <div className="flex flex-col py-3">
-                    <label className="font-medium text-gray-900" htmlFor="Name">
-                        Name
-                    </label>
-                    <input
-                        className="text-gray-700 border rounded p-1"
-                        type="text"
-                        id="Name"
-                        name="Name"
-                        defaultValue={userData?.name}
-                    />
-                </div>
+        <>
+            <div className="flex justify-between items-center mb-10">
+                <NavBar />
+            </div>
+            <div className="flex items-center justify-center w-full">
+                <form className="divide-y divide-gray-100 text-sm w-full max-w-md">
+                    <div className="flex flex-col py-3">
+                        <label
+                            className="font-medium text-gray-900"
+                            htmlFor="Name"
+                        >
+                            Name
+                        </label>
+                        <input
+                            className="text-gray-700 border rounded p-1"
+                            type="text"
+                            id="Name"
+                            name="Name"
+                            defaultValue={userData?.name}
+                        />
+                    </div>
 
-                <div className="flex flex-col py-3">
-                    <label
-                        className="font-medium text-gray-900"
-                        htmlFor="email"
-                    >
-                        Email
-                    </label>
-                    <input
-                        className="text-gray-700 border rounded p-1"
-                        type="text"
-                        id="email"
-                        name="email"
-                        defaultValue={userData?.email}
-                    />
-                </div>
+                    <div className="flex flex-col py-3">
+                        <label
+                            className="font-medium text-gray-900"
+                            htmlFor="email"
+                        >
+                            Email
+                        </label>
+                        <input
+                            className="text-gray-700 border rounded p-1"
+                            type="text"
+                            id="email"
+                            name="email"
+                            defaultValue={userData?.email}
+                        />
+                    </div>
 
-                <div className="flex flex-col py-3">
-                    <label
-                        className="font-medium text-gray-900"
-                        htmlFor="old-pwd"
-                    >
-                        Old Password
-                    </label>
-                    <input
-                        className="text-gray-700 border rounded p-1"
-                        type="text"
-                        id="old-pwd"
-                        name="old-pwd"
-                    />
-                </div>
-                <div className="flex flex-col py-3">
-                    <label
-                        className="font-medium text-gray-900"
-                        htmlFor="new-pwd"
-                    >
-                        New Password
-                    </label>
-                    <input
-                        className="text-gray-700 border rounded p-1"
-                        type="text"
-                        id="new-pwd"
-                        name="new-pwd"
-                    />
-                </div>
-                <div>
-                    <Button type="submit">Save</Button>
-                </div>
-            </form>
-        </div>
+                    <div className="flex flex-col py-3">
+                        <label
+                            className="font-medium text-gray-900"
+                            htmlFor="old-pwd"
+                        >
+                            Old Password
+                        </label>
+                        <input
+                            className="text-gray-700 border rounded p-1"
+                            type="text"
+                            id="old-pwd"
+                            name="old-pwd"
+                        />
+                    </div>
+                    <div className="flex flex-col py-3">
+                        <label
+                            className="font-medium text-gray-900"
+                            htmlFor="new-pwd"
+                        >
+                            New Password
+                        </label>
+                        <input
+                            className="text-gray-700 border rounded p-1"
+                            type="text"
+                            id="new-pwd"
+                            name="new-pwd"
+                        />
+                    </div>
+                    <div>
+                        <Button type="submit">Save</Button>
+                    </div>
+                </form>
+            </div>
+        </>
     )
 }
 
