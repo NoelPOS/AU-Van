@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectDB } from '@/libs/mongodb'
 import User from '@/models/User'
+import bcrypt from 'bcryptjs'
 
 export async function PUT(req: NextRequest) {
     await connectDB()
     try {
-        const { userid, name, email, oldpwd, newpwd } = await req.json()
+        const { userid, name, email, oldPwd, newPwd } = await req.json()
 
         // Validate the incoming data
-        if (!userid || !name || !email || !oldpwd || !newpwd) {
+        if (!userid || !name || !email || !oldPwd || !newPwd) {
             return NextResponse.json(
                 { error: 'Missing required fields' },
                 { status: 400 }
@@ -23,10 +24,11 @@ export async function PUT(req: NextRequest) {
         }
         console.log(user)
 
-        if (oldpwd === user.password) {
+        if (await bcrypt.compare(oldPwd, user.password)) {
+            const hashedPassword = await bcrypt.hash(newPwd, 12)
             const updatedUser = await User.findOneAndUpdate(
                 { _id: userid },
-                { name, email, password: newpwd },
+                { name, email, password: hashedPassword},
                 { new: true }
             )
 
