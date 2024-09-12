@@ -7,13 +7,16 @@ import Link from 'next/link'
 
 export default function TimeSlot({ from, to }: { from: string; to: string }) {
     const [times, setTimes] = useState<string[]>([])
+    const [hasBothChanged, setHasBothChanged] = useState(false)
 
     useEffect(() => {
-        if (!from || !to) {
-            from = 'Assumption University'
-            to = 'Mega Bangna'
+        // Check if both `from` and `to` have been set to non-default values
+        if (from !== 'Assumption University' && to !== 'Mega Bangna') {
+            setHasBothChanged(true) // Mark that both have been changed
         }
+    }, [from, to])
 
+    useEffect(() => {
         const indexObject = `${from.toLowerCase().split(' ').join('_')}_to_${to
             .toLowerCase()
             .split(' ')
@@ -37,7 +40,7 @@ export default function TimeSlot({ from, to }: { from: string; to: string }) {
         }
 
         fetchTimes()
-    }, [from, to])
+    }, [from, to, hasBothChanged])
 
     return (
         <>
