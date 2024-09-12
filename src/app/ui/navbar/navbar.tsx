@@ -12,8 +12,6 @@ export default function NavBar() {
     const { data: session } = useSession()
     const [userData, setUserData] = React.useState(session?.user)
 
-    console.log(userData.anem)
-
     return (
         <>
             <div>
@@ -33,7 +31,7 @@ export default function NavBar() {
                 <Link href="/profile/">Profile</Link>
             </div>
             <div className='flex gap-3 items-center'>
-                <p className="no-underline">Name: {userData.name}</p>
+                <p className="no-underline">Name: {userData?.name}</p>
                 <Link href="/">
                     <Button
                         onClick={() => {
