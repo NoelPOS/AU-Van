@@ -4,6 +4,7 @@ import Booking, { BookingDocument } from '@/models/Booking' // The Booking model
 
 export async function POST(req: NextRequest) {
     await connectDB()
+
     try {
         const { userid, bookingId, bookingDate, name, place, phone, persons } =
             await req.json()

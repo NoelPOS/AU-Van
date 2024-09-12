@@ -1,20 +1,39 @@
-import mongoose from 'mongoose'
+import mongoose, { Mongoose } from 'mongoose'
 
-const { MONGODB_URI } = process.env
+const MONGODB_URI: string = process.env.MONGODB_URI || ''
 
 if (!MONGODB_URI) {
     throw new Error('MONGODB_URI must be defined')
 }
 
-export const connectDB = async () => {
-    try {
-        const { connection } = await mongoose.connect(MONGODB_URI)
-        if (connection.readyState === 1) {
-            console.log('MongoDB Connected')
-            return Promise.resolve(true)
-        }
-    } catch (error) {
-        console.error(error)
-        return Promise.reject(error)
+interface MongooseCache {
+    conn: Mongoose | null
+    promise: Promise<Mongoose> | null
+}
+
+let cached: MongooseCache = global.mongoose as MongooseCache
+
+if (!cached) {
+    cached = global.mongoose = { conn: null, promise: null }
+}
+
+export async function connectDB(): Promise<Mongoose> {
+    if (cached.conn) {
+        return cached.conn
     }
+
+    if (!cached.promise) {
+        const opts = {
+            bufferCommands: false,
+        }
+
+        cached.promise = mongoose
+            .connect(MONGODB_URI, opts)
+            .then((mongoose) => {
+                return mongoose
+            })
+    }
+
+    cached.conn = await cached.promise
+    return cached.conn
 }

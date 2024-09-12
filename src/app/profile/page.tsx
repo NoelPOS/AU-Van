@@ -8,7 +8,6 @@ import NavBar from '../ui/navbar/navbar'
 
 const Profile = () => {
     const { data: session } = useSession()
-    console.log(session?.user?._id)
     const [userData, setUserData] = React.useState(session?.user)
     const [error, setError] = React.useState('')
 
