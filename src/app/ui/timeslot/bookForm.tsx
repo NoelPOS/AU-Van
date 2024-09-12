@@ -60,7 +60,7 @@ export default function BookForm({ date }: { date: Date }) {
         <Card className="w-[450px]">
             <CardHeader>
                 <CardTitle>
-                    <DisplayDate /> {' -> '}
+                    <DisplayDate />
                 </CardTitle>
                 <CardDescription>
                     If you entered the wrong phone number, the driver will be
@@ -146,7 +146,7 @@ export default function BookForm({ date }: { date: Date }) {
                             </RadioGroup>
                         </div>
                     </div>
-                    <CardFooter className="flex justify-between">
+                    <CardFooter className="flex justify-between mt-7">
                         <Link href="/routes">
                             <Button variant="outline">Cancel</Button>
                         </Link>
