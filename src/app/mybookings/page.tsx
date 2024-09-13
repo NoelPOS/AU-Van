@@ -4,6 +4,7 @@ import React, { use, useEffect, useState } from 'react'
 import axios from 'axios'
 import { useSession } from 'next-auth/react'
 import NavBar from '../ui/navbar/navbar'
+import Link from 'next/link'
 
 interface Booking {
     _id: string
@@ -20,6 +21,8 @@ export default function MyBookings() {
     const [bookings, setBookings] = useState<Booking[]>([])
     const [error, setError] = useState<string | null>(null)
     const userid = useSession().data?.user._id
+
+    const [editBookingInfo, setEditBookingInfo] = useState()
 
     useEffect(() => {
         const fetchBookings = async () => {
@@ -42,9 +45,10 @@ export default function MyBookings() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({userId: id}),
+            body: JSON.stringify({ userId: id }),
         })
     }
+
 
     return (
         <>
@@ -86,6 +90,14 @@ export default function MyBookings() {
                                         {new Date(
                                             booking.bookingDate
                                         ).toLocaleDateString()}
+                                    </td>
+                                    <td className="p-2 border-b text-center">
+                                        <Link
+                                            href={`/editbooking/${booking._id}`}
+                                            className="bg-black p-2 rounded text-white hover:bg-gray-800"
+                                        >
+                                            Edit
+                                        </Link>
                                     </td>
                                     <td className="p-2 border-b text-center">
                                         <button

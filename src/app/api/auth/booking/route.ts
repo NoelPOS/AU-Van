@@ -48,30 +48,52 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
     await connectDB()
     const userid = req.nextUrl.searchParams.get('userid')
+    const editid = req.nextUrl.searchParams.get('editid')
     console.log('userid:', userid)
 
-    if (!userid) {
-        return NextResponse.json(
-            { error: 'Missing required fields' },
-            { status: 400 }
-        )
-    }
+    // if (!userid) {
+    //     return NextResponse.json(
+    //         { error: 'Missing required fields' },
+    //         { status: 400 }
+    //     )
+    // }
 
-    try {
-        const bookings = await Booking.find({ userid })
-        if (bookings.length === 0) {
+    if (userid) {
+        try {
+            const bookings = await Booking.find({ userid })
+            if (bookings.length === 0) {
+                return NextResponse.json(
+                    { message: 'No bookings found for this user' },
+                    { status: 404 }
+                )
+            }
+            return NextResponse.json(bookings)
+        } catch (error) {
+            console.error('Error fetching bookings:', error)
             return NextResponse.json(
-                { message: 'No bookings found for this user' },
-                { status: 404 }
+                { error: 'Internal server error' },
+                { status: 500 }
             )
         }
-        return NextResponse.json(bookings)
-    } catch (error) {
-        console.error('Error fetching bookings:', error)
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        )
+    }
+
+    if (editid) {
+        try {
+            const bookings = await Booking.find({ _id: editid })
+            if (bookings.length === 0) {
+                return NextResponse.json(
+                    { message: 'No bookings found for this this id' },
+                    { status: 404 }
+                )
+            }
+            return NextResponse.json(bookings)
+        } catch (error) {
+            console.error('Error fetching bookings:', error)
+            return NextResponse.json(
+                { error: 'Internal server error' },
+                { status: 500 }
+            )
+        }
     }
 }
 

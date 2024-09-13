@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, FormEvent } from 'react'
+import { useState, useEffect, FormEvent } from 'react'
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import {
@@ -21,7 +21,13 @@ import { useSession } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
 import axios from 'axios'
 
-export default function BookForm({ date }: { date: Date }) {
+export default function BookForm({
+    date,
+    isEdit,
+}: {
+    date: Date
+    isEdit: { edit: boolean; id: any }
+}) {
     const searchParams = useSearchParams()
     const time = searchParams.get('time')
     const fromm = searchParams.get('from')
@@ -33,6 +39,40 @@ export default function BookForm({ date }: { date: Date }) {
     const [phone, setPhone] = useState<string>('')
     const [persons, setPersons] = useState<number>(1)
     const [payment, setPayment] = useState<string>('cash')
+
+    const [editData, setEditData] = useState()
+
+    useEffect(() => {
+        const fetchData = async () => {
+            if (isEdit) {
+                try {
+                    const response = await fetch(
+                        `/api/auth/booking?editid=${encodeURIComponent(isEdit.id)}`,
+                        {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                        }
+                    )
+
+                    if (!response.ok) {
+                        throw new Error(`Error: ${response.statusText}`)
+                    }
+
+                    const data = await response.json()
+                    setEditData(data)
+                } catch (error) {
+                    console.error('Failed to fetch booking data:', error)
+                }
+            }
+        }
+
+        fetchData()
+    }, [isEdit])
+
+    console.log(editData)
+
     const router = useRouter()
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
