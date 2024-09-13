@@ -36,6 +36,16 @@ export default function MyBookings() {
         fetchBookings()
     }, [userid])
 
+    const handleDelete = async (id: string) => {
+        const response = await fetch(`/api/auth/booking`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({userId: id}),
+        })
+    }
+
     return (
         <>
             <div className="flex justify-between items-center mb-10">
@@ -76,6 +86,16 @@ export default function MyBookings() {
                                         {new Date(
                                             booking.bookingDate
                                         ).toLocaleDateString()}
+                                    </td>
+                                    <td className="p-2 border-b text-center">
+                                        <button
+                                            className="bg-red-500 p-2 rounded text-white hover:bg-red-700"
+                                            onClick={() =>
+                                                handleDelete(booking._id)
+                                            }
+                                        >
+                                            Cancel
+                                        </button>
                                     </td>
                                 </tr>
                             ))}
