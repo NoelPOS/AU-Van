@@ -27,7 +27,6 @@ export default function BookForm({
     date: Date
     isEdit: { edit: boolean; id: any }
 }) {
-
     const { data } = useSession()
     const [name, setName] = useState<string>('')
     const [place, setPlace] = useState<string>('')

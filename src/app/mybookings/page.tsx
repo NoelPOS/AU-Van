@@ -49,7 +49,6 @@ export default function MyBookings() {
         })
     }
 
-
     return (
         <>
             <div className="flex justify-between items-center mb-10">

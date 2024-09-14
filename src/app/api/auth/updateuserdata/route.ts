@@ -28,7 +28,7 @@ export async function PUT(req: NextRequest) {
             const hashedPassword = await bcrypt.hash(newPwd, 12)
             const updatedUser = await User.findOneAndUpdate(
                 { _id: userid },
-                { name, email, password: hashedPassword},
+                { name, email, password: hashedPassword },
                 { new: true }
             )
 
