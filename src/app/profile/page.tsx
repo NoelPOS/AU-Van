@@ -32,8 +32,7 @@ const Profile = () => {
             alert('Success')
             console.log(response.data.error)
         } catch (error) {
-            console.error(error.response.data.error)
-            setError(error.response.data.error)
+            console.error(error)
         }
     }
 
@@ -115,7 +114,6 @@ const Profile = () => {
                             id="email"
                             name="email"
                             defaultValue={userData?.email}
-                            onChange={handleInputChange}
                             onChange={handleInputChange}
                         />
                     </div>
