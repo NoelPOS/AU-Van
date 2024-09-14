@@ -6,6 +6,10 @@ if (!MONGODB_URI) {
     throw new Error('MONGODB_URI must be defined')
 }
 
+declare global {
+    var mongoose: MongooseCache | undefined
+}
+
 interface MongooseCache {
     conn: Mongoose | null
     promise: Promise<Mongoose> | null

@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react'
 import axios from 'axios'
 import NavBar from '../ui/navbar/navbar'
 
-const Profile = () => {
+function Profile() {
     const { data: session } = useSession()
     const [userData, setUserData] = React.useState(session?.user)
     const [error, setError] = React.useState('')
@@ -31,7 +31,7 @@ const Profile = () => {
             })
             alert('Success')
             console.log(response.data.error)
-        } catch (error) {
+        } catch (error: any) {
             console.error(error.response.data.error)
             setError(error.response.data.error)
         }
@@ -115,7 +115,6 @@ const Profile = () => {
                             id="email"
                             name="email"
                             defaultValue={userData?.email}
-                            onChange={handleInputChange}
                             onChange={handleInputChange}
                         />
                     </div>
