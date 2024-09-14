@@ -3,10 +3,12 @@
 import React, { FormEvent, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import axios from 'axios'
 import NavBar from '../ui/navbar/navbar'
 
 const Profile = () => {
+    const router = useRouter()
     const { data: session } = useSession()
     const [userData, setUserData] = React.useState(session?.user)
     const [error, setError] = React.useState('')
@@ -29,8 +31,8 @@ const Profile = () => {
                 oldPwd,
                 newPwd,
             })
+            router.back()
             alert('Success')
-            console.log(response.data.error)
         } catch (error) {
             console.error(error)
         }
