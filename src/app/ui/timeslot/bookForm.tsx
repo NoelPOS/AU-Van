@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, FormEvent } from 'react'
+import { useState, useEffect } from 'react'
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import {
@@ -55,6 +55,7 @@ export default function BookForm({
                     }
 
                     const data = await response.json()
+                    setEditData(data[0])
                     setName(data[0].name)
                     setName(data[0].name)
                     setPhone(data[0].phone)
@@ -92,6 +93,28 @@ export default function BookForm({
         }
     }
 
+    const handleEditSubmit = async (
+        event: React.FormEvent<HTMLFormElement>
+    ) => {
+        event.preventDefault()
+
+        const bookingData = {
+            editid: editData?._id,
+            name,
+            place,
+            phone,
+            persons,
+        }
+
+        try {
+            const response = await axios.put('/api/auth/booking', bookingData)
+            alert(response.data.message)
+            router.push('/')
+        } catch (error) {
+            console.error('An error occurred while booking:', error)
+        }
+    }
+
     return (
         <Card className="w-[450px]">
             <CardHeader>
@@ -104,7 +127,7 @@ export default function BookForm({
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={isEdit.edit ? handleEditSubmit : handleSubmit}>
                     <div className="grid w-full items-center gap-4">
                         <div className="flex items-center gap-4">
                             <Label className="w-16" htmlFor="name">
@@ -186,7 +209,9 @@ export default function BookForm({
                         <Link href="/routes">
                             <Button variant="outline">Cancel</Button>
                         </Link>
-                        <Button type="submit">Book</Button>
+                        <Button type="submit">
+                            {isEdit.edit ? 'Update' : 'Book'}
+                        </Button>
                     </CardFooter>
                 </form>
             </CardContent>

@@ -123,3 +123,33 @@ export async function DELETE(req: NextRequest) {
         )
     }
 }
+
+export async function PUT(req: NextRequest) {
+    await connectDB()
+
+    const { editid, name, place, phone, persons } = await req.json()
+
+    try {
+        // Delete the user by userId
+        const updatedBooking = await Booking.findByIdAndUpdate(
+            { _id: new ObjectId(editid) },
+            { $set: { name, place, phone, persons } },
+            { new: true, runValidators: true }
+        )
+
+        if (!updatedBooking) {
+            return NextResponse.json(
+                { message: 'Booking not found' },
+                { status: 404 }
+            )
+        }
+
+        return NextResponse.json({ message: 'Update successfully' })
+    } catch (error: any) {
+        console.error('Error deleting user:', error)
+        return NextResponse.json(
+            { message: 'Failed to delete user', error: error.message },
+            { status: 500 }
+        )
+    }
+}
