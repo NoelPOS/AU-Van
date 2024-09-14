@@ -34,7 +34,7 @@ export default function BookForm({
     const [persons, setPersons] = useState<number>(1)
     const [payment, setPayment] = useState<string>('cash')
 
-    const [editData, setEditData] = useState()
+    const [editData, setEditData] = useState<any>()
 
     useEffect(() => {
         const fetchData = async () => {
@@ -55,7 +55,11 @@ export default function BookForm({
                     }
 
                     const data = await response.json()
-                    setEditData(data)
+                    setName(data[0].name)
+                    setName(data[0].name)
+                    setPhone(data[0].phone)
+                    setPlace(data[0].place)
+                    setPersons(data[0].persons)
                 } catch (error) {
                     console.error('Failed to fetch booking data:', error)
                 }
@@ -64,8 +68,6 @@ export default function BookForm({
 
         fetchData()
     }, [isEdit])
-
-    console.log(editData)
 
     const router = useRouter()
 
