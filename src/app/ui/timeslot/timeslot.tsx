@@ -25,7 +25,7 @@ export default function TimeSlot({ from, to }: { from: string; to: string }) {
         const fetchTimes = async () => {
             try {
                 const res = await fetch(
-                    `/api/auth/getbookings?from=${from}&to=${to}`
+                    `/api/auth/timeslot?from=${from}&to=${to}`
                 )
                 const data = await res.json()
 

@@ -52,7 +52,7 @@ export default function BookForm({ date }: { date: Date }) {
         try {
             const response = await axios.post('/api/auth/booking', bookingData)
             alert(response.data.message)
-            router.push('/')
+            router.push('/mybookings')
         } catch (error) {
             console.error('An error occurred while booking:', error)
         }

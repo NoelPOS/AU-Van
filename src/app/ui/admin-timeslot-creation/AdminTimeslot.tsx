@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import axios from 'axios'
 
 import {
@@ -42,6 +43,7 @@ const times = [
 ]
 
 export default function Admin() {
+    const router = useRouter()
     const data = {
         assumption_university: ['Siam Paragon', 'Mega Bangna'],
         siam_paragon: ['Assumption University'],
@@ -86,6 +88,7 @@ export default function Admin() {
                 to,
                 time: [time],
             })
+            router.push('/admin')
             alert(response.data.message)
         } catch (error) {
             console.log(error)
