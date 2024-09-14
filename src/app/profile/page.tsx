@@ -5,11 +5,29 @@ import { Button } from '@/components/ui/button'
 import { useSession } from 'next-auth/react'
 import axios from 'axios'
 import NavBar from '../ui/navbar/navbar'
+import { signOut } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 
 function Profile() {
     const { data: session } = useSession()
     const [userData, setUserData] = React.useState(session?.user)
     const [error, setError] = React.useState('')
+    const router = useRouter()
+
+    const handleDelete = async () => {
+        try {
+            const response = await axios.delete('/api/auth/userdata', {
+                data: JSON.stringify({ userid: session?.user?._id }),
+            })
+            alert('Successful Delete account')
+            console.log(response.data.error)
+            signOut()
+            router.push('/')
+        } catch (error: any) {
+            console.error(error.response.data.error)
+            setError(error.response.data.error)
+        }
+    }
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
@@ -149,8 +167,19 @@ function Profile() {
                             onChange={handleInputChange}
                         />
                     </div>
-                    <div>
-                        <Button type="submit">Save</Button>
+                    <div className="flex justify-between">
+                        <div>
+                            <Button
+                                type="button"
+                                className="bg-red-500 hover:bg-red-800"
+                                onClick={handleDelete}
+                            >
+                                Delete account
+                            </Button>
+                        </div>
+                        <div>
+                            <Button type="submit">Save</Button>
+                        </div>
                     </div>
                 </form>
             </div>

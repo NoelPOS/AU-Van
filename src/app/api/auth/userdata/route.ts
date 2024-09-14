@@ -70,3 +70,24 @@ export async function PUT(req: NextRequest) {
         )
     }
 }
+
+export async function DELETE(req: NextRequest) {
+    await connectDB()
+
+    const { userid } = await req.json()
+    console.log(userid)
+
+    try {
+        const user = await User.findByIdAndDelete(userid)
+
+        return NextResponse.json({
+            message: 'User deleted successfully!',
+            status: 200,
+        })
+    } catch (error) {
+        return NextResponse.json(
+            { error: 'Error deleting user' },
+            { status: 500 }
+        )
+    }
+}
