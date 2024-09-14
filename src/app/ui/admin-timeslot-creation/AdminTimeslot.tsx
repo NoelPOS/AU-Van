@@ -81,7 +81,7 @@ export default function Admin() {
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         try {
-            const response = await axios.post('/api/auth/getbookings', {
+            const response = await axios.post('/api/auth/timeslot', {
                 from,
                 to,
                 time: [time],

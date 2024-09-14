@@ -1,3 +1,4 @@
+'use client'
 import NavBar from '@/app/ui/navbar/navbar'
 import BookForm from '@/app/ui/timeslot/bookForm'
 

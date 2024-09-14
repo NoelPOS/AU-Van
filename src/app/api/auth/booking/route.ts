@@ -6,8 +6,17 @@ export async function POST(req: NextRequest) {
     await connectDB()
 
     try {
-        const { userid, bookingId, bookingDate, name, place, phone, persons } =
-            await req.json()
+        const {
+            userid,
+            bookingId,
+            bookingDate,
+            name,
+            place,
+            phone,
+            persons,
+            time,
+            route,
+        } = await req.json()
 
         // Validate the incoming data
         if (!userid || !name || !place || !phone || !persons) {
@@ -26,6 +35,8 @@ export async function POST(req: NextRequest) {
             place,
             phone,
             persons,
+            route,
+            time,
         })
 
         // Save the booking to the database

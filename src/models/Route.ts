@@ -13,7 +13,10 @@ const routeSchema: Schema = new Schema({
 })
 
 const RoutesSchema: Schema = new Schema({
-    assumption_university_to_mega_bangna: { type: routeSchema, required: true },
+    assumption_university_to_mega_bangna: {
+        type: routeSchema,
+        required: true,
+    },
     assumption_university_to_siam_paragon: {
         type: routeSchema,
         required: true,

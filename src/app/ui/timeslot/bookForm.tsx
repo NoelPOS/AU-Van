@@ -45,6 +45,8 @@ export default function BookForm({ date }: { date: Date }) {
             phone,
             persons,
             bookingDate: date,
+            route: `${fromm}-${too}`,
+            time,
         }
 
         try {
