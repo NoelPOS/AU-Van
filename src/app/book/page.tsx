@@ -12,7 +12,7 @@ export default function Page() {
             </div>
 
             <div className="flex justify-center items-center">
-                <BookForm date={date} />
+                <BookForm date={date} isEdit={{ edit: false, id: 0 }} />
             </div>
         </main>
     )

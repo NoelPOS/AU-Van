@@ -88,7 +88,7 @@ const Signup = (props: Props) => {
                         </div>
                     </div>
                     <form onSubmit={handleSubmit}>
-                    {error && (<p  className='text-red-500'></p>)}
+                        {error && <p className="text-red-500"></p>}
                         <div className="grid gap-4">
                             <div className="grid gap-2">
                                 <Label htmlFor="name">Name</Label>

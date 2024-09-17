@@ -30,7 +30,7 @@ export default function NavBar() {
                 <Link href="/mybookings">My Bookings</Link>
                 <Link href="/profile/">Profile</Link>
             </div>
-            <div className='flex gap-3 items-center'>
+            <div className="flex gap-3 items-center">
                 <p className="no-underline">Name: {userData?.name}</p>
                 <Link href="/">
                     <Button
