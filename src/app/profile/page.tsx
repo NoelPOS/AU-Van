@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation'
 import axios from 'axios'
 import NavBar from '../ui/navbar/navbar'
 import { signOut } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
 
 function Profile() {
     const { data: session } = useSession()
