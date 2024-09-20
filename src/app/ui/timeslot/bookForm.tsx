@@ -19,6 +19,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import axios from 'axios'
+import { useSearchParams } from 'next/navigation'
 
 export default function BookForm({
     date,
@@ -27,6 +28,11 @@ export default function BookForm({
     date: Date
     isEdit: { edit: boolean; id: any }
 }) {
+    const searchParams = useSearchParams()
+    const time = searchParams.get('time')
+    const fromm = searchParams.get('from')
+    const too = searchParams.get('to')
+
     const { data } = useSession()
     const [name, setName] = useState<string>('')
     const [place, setPlace] = useState<string>('')
