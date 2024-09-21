@@ -34,8 +34,33 @@ The AU Van project is built using:
 - **MongoDB**: A NoSQL database for flexible data management and efficient querying.
 
 ## Screenshots
-![Admin Dashboard](link-to-screenshot1)
-![User Booking Interface](link-to-screenshot2)
+
+![Auth Screen]
+
+![image](https://github.com/user-attachments/assets/fbc20ea7-b86d-4122-9288-7636dc97dc72)
+
+![image](https://github.com/user-attachments/assets/e8e84b46-d6aa-463e-aef8-d0a62f603944)
+
+
+![Admin Dashboard]
+
+/
+![image](https://github.com/user-attachments/assets/3a7986f1-fc45-433b-a8a2-0dbc09e4b0ce)
+
+/admin
+![image](https://github.com/user-attachments/assets/654dd0b0-e743-42a3-bf86-960593e69437)
+![image](https://github.com/user-attachments/assets/13f64097-85b5-4600-92b8-3629bfe38191)
+
+
+
+![User Booking Interface]
+
+
+
+/mybookings
+![image](https://github.com/user-attachments/assets/e5b9090d-f3fa-4720-9a1a-a8549ee1933a)
+
+
 ![Profile Page](link-to-screenshot3)
 
 
