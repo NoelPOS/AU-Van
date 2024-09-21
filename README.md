@@ -57,8 +57,22 @@ The AU Van project is built using:
 
 ### User 
 
+#### /
+![image](https://github.com/user-attachments/assets/83f172f5-8da7-401e-acc3-45de583fdd7d)
+
+#### /routes
+![image](https://github.com/user-attachments/assets/25b1943f-61a8-4286-919d-c9312c93598a)
+
+#### /book
+![image](https://github.com/user-attachments/assets/689ad31c-e440-49dc-b00f-4194ab2561d3)
 
 #### /mybookings
 ![image](https://github.com/user-attachments/assets/e5b9090d-f3fa-4720-9a1a-a8549ee1933a)
+
+#### /profile
+![image](https://github.com/user-attachments/assets/7926096f-cc17-43bc-8d54-0d76175f54d9)
+
+
+
 
 
