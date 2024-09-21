@@ -58,6 +58,7 @@ const Signup = (props: Props) => {
             if (res?.ok) return router.push('/')
         } catch (error) {
             if (error instanceof AxiosError) {
+                console.log(error.response)
                 const errorMessage = error.response?.data.message
                 setError(errorMessage)
             }
@@ -88,7 +89,7 @@ const Signup = (props: Props) => {
                         </div>
                     </div>
                     <form onSubmit={handleSubmit}>
-                        {error && <p className="text-red-500"></p>}
+                        <p className='text-red-500'>{error}</p>
                         <div className="grid gap-4">
                             <div className="grid gap-2">
                                 <Label htmlFor="name">Name</Label>
