@@ -22,7 +22,14 @@ Our appointment system introduces a seamless online booking process that address
 - View their booking history.
 - Access a profile page to update their password or delete their account.
 
-The project is built using Next.js, shadcn/ui, NextAuth, Vercel, and MongoDB.
+### Technology Stack
+The AU Van project is built using:
+
+- **Next.js**: For server-side rendering and dynamic routing, enhancing performance and SEO.
+- **shadcn/ui**: A UI component library for rapid development and consistent design.
+- **NextAuth**: For secure user authentication and easy sign-up/login.
+- **Vercel**: For seamless deployment and optimized performance.
+- **MongoDB**: A NoSQL database for flexible data management and efficient querying.
 
 ## Screenshots
 ![Admin Dashboard](link-to-screenshot1)
