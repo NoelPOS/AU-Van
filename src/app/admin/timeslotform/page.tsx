@@ -23,6 +23,7 @@ import DisplayDate from '@/app/ui/display-date/display-date'
 import Link from 'next/link'
 import axios from 'axios'
 import { useSearchParams, useRouter } from 'next/navigation'
+import { Clock, MapPin, Users } from 'lucide-react'
 
 export default function TimeslotAdmin() {
     const router = useRouter()
@@ -59,6 +60,7 @@ export default function TimeslotAdmin() {
         '09:00',
     ])
     const [newTime, setNewTime] = React.useState<string>('')
+    const [newNumberOfSeats, setNewNumberOfSeats] = React.useState<number>(0)
 
     const handleUpdate = async () => {
         try {
@@ -66,11 +68,12 @@ export default function TimeslotAdmin() {
                 time,
                 route,
                 newTime,
+                newNumberOfSeats,
             }
-            const res = await axios.put('/api/auth/timeslot', data)
+            const res = await axios.put('/api/auth/routes', data)
             console.log(res.data)
-            router.push('/admin')
             alert('Time slot updated successfully')
+            router.back()
         } catch (error) {
             console.error('Failed to update booking:', error)
         }
@@ -79,10 +82,10 @@ export default function TimeslotAdmin() {
     const handleDelete = async () => {
         try {
             const res = await axios.delete(
-                `/api/auth/timeslot?time=${time}&route=${route}`
+                `/api/auth/routes?time=${time}&from=${from}&to=${to}`
             )
             console.log(res.data)
-            router.push('/admin')
+            router.back()
             alert('Time slot deleted successfully')
         } catch (error) {
             console.error('Failed to delete booking:', error)
@@ -122,72 +125,91 @@ export default function TimeslotAdmin() {
         }
 
         fetchTimes()
-    }, [])
+    }, [from, to, usableTimes])
 
     return (
-        <Card className="lg:w-[50%]  md:w-[450px]  mx-auto mt-5 sm:w-[300px]">
-            <CardHeader>
-                <CardTitle>
-                    <DisplayDate />
+        <Card className="w-full max-w-2xl mx-auto mt-8 shadow-lg">
+            <CardHeader className="space-y-1">
+                <CardTitle className="text-2xl font-bold text-center">
+                    Timeslot Management
                 </CardTitle>
-                <CardDescription>
-                    You can delete or update the time slot
+                <CardDescription className="text-center">
+                    <DisplayDate />
                 </CardDescription>
             </CardHeader>
-            <CardContent>
-                <div>
-                    <div className="grid w-full items-center gap-4">
-                        <div className="flex items-center gap-4">
-                            <Label className="w-16" htmlFor="route">
-                                Route
-                            </Label>
-                            <Input id="route" value={route ?? ''} />
+            <CardContent className="grid gap-6">
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="route">Route</Label>
+                        <div className="flex items-center space-x-2 rounded-md border p-2">
+                            <MapPin className="h-4 w-4 opacity-70" />
+                            <Input
+                                id="route"
+                                value={route ?? ''}
+                                readOnly
+                                className="border-0 p-0"
+                            />
                         </div>
-                        <div className="flex items-center gap-4">
-                            <Label className="w-16" htmlFor="currenttime">
-                                Current Time
-                            </Label>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="currenttime">Current Time</Label>
+                        <div className="flex items-center space-x-2 rounded-md border p-2">
+                            <Clock className="h-4 w-4 opacity-70" />
                             <Input
                                 id="currenttime"
                                 value={time ?? ''}
-                                required
+                                readOnly
+                                className="border-0 p-0"
                             />
                         </div>
-                        <div className="flex items-center gap-4">
-                            <Label className="w-16" htmlFor="newtime">
-                                New Time
-                            </Label>
-
-                            <Select
-                                value={newTime}
-                                onValueChange={TIMEhandleValueChange}
-                            >
-                                <SelectTrigger className="lg:w-[200px] w-[150px]">
-                                    <SelectValue placeholder="Choose New Time" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {usableTimes.map((each: string) => {
-                                        return (
-                                            <SelectItem key={each} value={each}>
-                                                {each}
-                                            </SelectItem>
-                                        )
-                                    })}
-                                </SelectContent>
-                            </Select>
-                        </div>
                     </div>
-                    <CardFooter className="flex justify-between mt-7">
-                        <Link href="/admin">
-                            <Button variant="outline">Cancel</Button>
-                        </Link>
-                        <div className="flex gap-2">
-                            <Button onClick={handleDelete}>Delete</Button>
-                            <Button onClick={handleUpdate}>Update</Button>
-                        </div>
-                    </CardFooter>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="newtime">New Time</Label>
+                    <Select
+                        value={newTime}
+                        onValueChange={TIMEhandleValueChange}
+                    >
+                        <SelectTrigger id="newtime" className="w-full">
+                            <SelectValue placeholder="Choose New Time" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {usableTimes.map((each: string) => (
+                                <SelectItem key={each} value={each}>
+                                    {each}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="newseats">New Number of Seats</Label>
+                    <div className="flex items-center space-x-2 rounded-md border p-2">
+                        <Users className="h-4 w-4 opacity-70" />
+                        <Input
+                            id="newseats"
+                            type="number"
+                            placeholder="Enter new number of seats"
+                            value={newNumberOfSeats || ''}
+                            onChange={(e) =>
+                                setNewNumberOfSeats(Number(e.target.value))
+                            }
+                            className="border-0 p-0"
+                        />
+                    </div>
                 </div>
             </CardContent>
+            <CardFooter className="flex justify-between">
+                <Link href="/admin">
+                    <Button variant="outline">Cancel</Button>
+                </Link>
+                <div className="space-x-2">
+                    <Button variant="destructive" onClick={handleDelete}>
+                        Delete
+                    </Button>
+                    <Button onClick={handleUpdate}>Update</Button>
+                </div>
+            </CardFooter>
         </Card>
     )
 }

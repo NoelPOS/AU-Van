@@ -1,18 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Card } from '@/components/ui/card'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { Clock, Users } from 'lucide-react'
 
 export default function TimeSlot({ from, to }: { from: string; to: string }) {
-    const [times, setTimes] = useState<string[]>([])
+    const [times, setTimes] = useState<any[]>([])
     const [hasBothChanged, setHasBothChanged] = useState(false)
 
     useEffect(() => {
-        // Check if both `from` and `to` have been set to non-default values
         if (from !== 'Assumption University' && to !== 'Mega Bangna') {
-            setHasBothChanged(true) // Mark that both have been changed
+            setHasBothChanged(true)
         }
     }, [from, to])
 
@@ -25,14 +25,14 @@ export default function TimeSlot({ from, to }: { from: string; to: string }) {
         const fetchTimes = async () => {
             try {
                 const res = await fetch(
-                    `/api/auth/timeslot?from=${from}&to=${to}`
+                    `/api/auth/routes?from=${from}&to=${to}`
                 )
                 const data = await res.json()
 
-                if (data[indexObject]?.time) {
-                    setTimes(data[indexObject].time)
+                if (data) {
+                    setTimes(data)
                 } else {
-                    setTimes([]) // No times found
+                    setTimes([])
                 }
             } catch (error) {
                 console.error('Failed to fetch times:', error)
@@ -43,21 +43,24 @@ export default function TimeSlot({ from, to }: { from: string; to: string }) {
     }, [from, to, hasBothChanged])
 
     return (
-        <>
-            <Card className="flex flex-col gap-5 p-6 w-fullmx-auto">
-                <h4 className="text-xl">
-                    <span className="text-yellow-500">{from}</span> &rarr;{' '}
+        <Card className="w-full mx-auto">
+            <CardHeader>
+                <CardTitle className="text-xl">
+                    <span className="text-yellow-500">{from}</span>
+                    <span className="mx-2">&rarr;</span>
                     <span className="text-rose-500">{to}</span>
-                </h4>
-                <div className="mx-auto flex items-center justify-center gap-4 flex-wrap">
-                    {times.length > 0 ? (
-                        times.map((time, index) => (
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                {times.length > 0 ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        {times.map((time, index) => (
                             <Link
                                 key={index}
                                 href={{
                                     pathname: 'admin/timeslotform',
                                     query: {
-                                        time: time,
+                                        time: time.time,
                                         route: `${from.toLowerCase().split(' ').join('_')}_to_${to
                                             .toLowerCase()
                                             .split(' ')
@@ -66,15 +69,30 @@ export default function TimeSlot({ from, to }: { from: string; to: string }) {
                                         to: to,
                                     },
                                 }}
+                                className="block"
                             >
-                                <Button className="my-3">{time}</Button>
+                                <Button
+                                    variant="outline"
+                                    className="w-full h-auto py-2 flex flex-col items-center justify-center gap-2"
+                                >
+                                    <div className="flex items-center">
+                                        <Clock className="w-4 h-4 mr-1" />
+                                        <span>{time.time}</span>
+                                    </div>
+                                    <div className="flex items-center text-sm text-muted-foreground">
+                                        <Users className="w-4 h-4 mr-1" />
+                                        <span>{time.seats} seats</span>
+                                    </div>
+                                </Button>
                             </Link>
-                        ))
-                    ) : (
-                        <p>No available times for this route.</p>
-                    )}
-                </div>
-            </Card>
-        </>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-center text-muted-foreground">
+                        No available times for this route.
+                    </p>
+                )}
+            </CardContent>
+        </Card>
     )
 }
