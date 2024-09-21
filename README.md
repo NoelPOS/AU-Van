@@ -10,6 +10,8 @@ AU Van is an online van booking system designed for the van service at Assumptio
 
 Our appointment system introduces a seamless online booking process that addresses these challenges. The application features two main parts: an admin dashboard and a user interface.
 
+**Note**: When logged in with an admin email, an "Admin" button appears in the navbar for easy access to the admin page. Regular users will see standard navigation options.
+
 ### Admin Features:
 - Create time slots for specific routes.
 - Delete and update user bookings.
