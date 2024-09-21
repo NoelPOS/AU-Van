@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# AU Van
 
-## Getting Started
+## Team Members
+- [Jan Poonthong](https://github.com/JanPoonthong)
+- [Khin Myo Aye](https://github.com/Ariel-Khin99)
+- [Noel Paing Oak Soe](https://github.com/NoelPOS)
 
-First, run the development server:
+## Project Description
+AU Van is an online van booking system designed for the van service at Assumption University of Thailand. The current system relies on manual bookings through the LINE app and daily posted schedules, which can be tedious and inefficient. 
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Our appointment system introduces a seamless online booking process that addresses these challenges. The application features two main parts: an admin dashboard and a user interface.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**Note**: When logged in with an admin email, an "Admin" button appears in the navbar for easy access to the admin page. Regular users will see standard navigation options.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Admin Features:
+- Create time slots for specific routes.
+- Delete and update user bookings.
+- View statistics on today's bookings.
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+### User Features:
+- Register and create an account.
+- Check the schedule for the day.
+- Select a time slot and make a booking.
+- View their booking history.
+- Access a profile page to update their password or delete their account.
 
-## Learn More
+### Technology Stack
+The AU Van project is built using:
 
-To learn more about Next.js, take a look at the following resources:
+- **Next.js**: For server-side rendering and dynamic routing, enhancing performance and SEO.
+- **shadcn/ui**: A UI component library for rapid development and consistent design.
+- **NextAuth**: For secure user authentication and easy sign-up/login.
+- **Vercel**: For seamless deployment and optimized performance.
+- **MongoDB**: A NoSQL database for flexible data management and efficient querying.
 
--   [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
--   [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Screenshots
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+### Auth Screen
 
-## Deploy on Vercel
+#### Login
+![image](https://github.com/user-attachments/assets/fbc20ea7-b86d-4122-9288-7636dc97dc72)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+#### Sign Up
+![image](https://github.com/user-attachments/assets/e8e84b46-d6aa-463e-aef8-d0a62f603944)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+
+### Admin 
+
+#### /
+![image](https://github.com/user-attachments/assets/3a7986f1-fc45-433b-a8a2-0dbc09e4b0ce)
+
+#### /admin
+![image](https://github.com/user-attachments/assets/654dd0b0-e743-42a3-bf86-960593e69437)
+![image](https://github.com/user-attachments/assets/13f64097-85b5-4600-92b8-3629bfe38191)
+
+
+
+### User 
+
+#### /
+![image](https://github.com/user-attachments/assets/83f172f5-8da7-401e-acc3-45de583fdd7d)
+
+#### /routes
+![image](https://github.com/user-attachments/assets/25b1943f-61a8-4286-919d-c9312c93598a)
+
+#### /book
+![image](https://github.com/user-attachments/assets/689ad31c-e440-49dc-b00f-4194ab2561d3)
+
+#### /mybookings
+![image](https://github.com/user-attachments/assets/e5b9090d-f3fa-4720-9a1a-a8549ee1933a)
+
+#### /profile
+![image](https://github.com/user-attachments/assets/7926096f-cc17-43bc-8d54-0d76175f54d9)
+
+
+
+
+
