@@ -1,9 +1,9 @@
 # AU Van
 
 ## Team Members
-- [Member 1](link-to-repo)
-- [Member 2](link-to-repo)
-- [Member 3](link-to-repo)
+- [Jan Poonthong](https://github.com/JanPoonthong)
+- [Khin Myo Aye](https://github.com/Ariel-Khin99)
+- [Noel Paing Oak Soe](https://github.com/NoelPOS)
 
 ## Project Description
 AU Van is an online van booking system designed for the van service at Assumption University of Thailand. The current system relies on manual bookings through the LINE app and daily posted schedules, which can be tedious and inefficient. 
