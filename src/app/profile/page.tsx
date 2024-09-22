@@ -141,7 +141,6 @@ function Profile() {
                                     name="userid"
                                     value={userData?._id || ''}
                                     readOnly
-                                    disabled
                                 />
                             </div>
                             <div className="space-y-2">
