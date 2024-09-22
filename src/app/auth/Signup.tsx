@@ -58,6 +58,7 @@ const Signup = ({ showLogin, setShowLogin }: Props) => {
             if (res?.ok) return router.push('/')
         } catch (error) {
             if (error instanceof AxiosError) {
+                console.log(error.response)
                 const errorMessage = error.response?.data.message
                 setError(errorMessage)
             }

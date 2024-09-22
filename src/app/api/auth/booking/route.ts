@@ -135,6 +135,8 @@ export async function GET(req: NextRequest) {
         }
     }
 
+    // if message
+
     if (editid) {
         try {
             const bookings = await Booking.find({ _id: editid })
