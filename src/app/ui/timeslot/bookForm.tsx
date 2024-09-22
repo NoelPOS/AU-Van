@@ -13,12 +13,13 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import DisplayDate from '@/app/ui/display-date/display-date'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import axios from 'axios'
+import { useSearchParams } from 'next/navigation'
+import { User, MapPin, Phone, Users, Calendar, Clock } from 'lucide-react'
 
 export default function BookForm({
     date,
@@ -27,18 +28,23 @@ export default function BookForm({
     date: Date
     isEdit: { edit: boolean; id: any }
 }) {
+    const searchParams = useSearchParams()
+    const time = searchParams.get('time')
+    const fromm = searchParams.get('from')
+    const too = searchParams.get('to')
+
     const { data } = useSession()
     const [name, setName] = useState<string>('')
     const [place, setPlace] = useState<string>('')
     const [phone, setPhone] = useState<string>('')
     const [persons, setPersons] = useState<number>(1)
-    const [payment, setPayment] = useState<string>('cash')
-
     const [editData, setEditData] = useState<any>()
+
+    const router = useRouter()
 
     useEffect(() => {
         const fetchData = async () => {
-            if (isEdit) {
+            if (isEdit.edit) {
                 try {
                     const response = await fetch(
                         `/api/auth/booking?editid=${encodeURIComponent(isEdit.id)}`,
@@ -57,7 +63,6 @@ export default function BookForm({
                     const data = await response.json()
                     setEditData(data[0])
                     setName(data[0].name)
-                    setName(data[0].name)
                     setPhone(data[0].phone)
                     setPlace(data[0].place)
                     setPersons(data[0].persons)
@@ -70,8 +75,6 @@ export default function BookForm({
         fetchData()
     }, [isEdit])
 
-    const router = useRouter()
-
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
 
@@ -82,12 +85,15 @@ export default function BookForm({
             phone,
             persons,
             bookingDate: date,
+            from: fromm,
+            to: too,
+            time,
         }
 
         try {
             const response = await axios.post('/api/auth/booking', bookingData)
             alert(response.data.message)
-            router.push('/')
+            router.push('/mybookings')
         } catch (error) {
             console.error('An error occurred while booking:', error)
         }
@@ -116,47 +122,52 @@ export default function BookForm({
     }
 
     return (
-        <Card className="w-[450px]">
+        <Card className="w-full max-w-md mx-auto">
             <CardHeader>
-                <CardTitle>
-                    <DisplayDate />
+                <CardTitle className="text-2xl font-bold text-center">
+                    {isEdit.edit ? 'Edit Booking' : 'Book Your Ride'}
                 </CardTitle>
-                <CardDescription>
-                    If you entered the wrong phone number, the driver will be
-                    unable to pick you up.
+                <CardDescription className="text-center">
+                    <DisplayDate />
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <form onSubmit={isEdit.edit ? handleEditSubmit : handleSubmit}>
-                    <div className="grid w-full items-center gap-4">
-                        <div className="flex items-center gap-4">
-                            <Label className="w-16" htmlFor="name">
-                                Name
-                            </Label>
+                <form
+                    onSubmit={isEdit.edit ? handleEditSubmit : handleSubmit}
+                    className="space-y-4"
+                >
+                    <div className="space-y-2">
+                        <Label htmlFor="name">Name</Label>
+                        <div className="relative">
+                            <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                             <Input
                                 id="name"
                                 placeholder="Enter your name"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 required
+                                className="pl-10"
                             />
                         </div>
-                        <div className="flex items-center gap-4">
-                            <Label className="w-16" htmlFor="place">
-                                Place
-                            </Label>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="place">Place</Label>
+                        <div className="relative">
+                            <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                             <Input
                                 id="place"
                                 placeholder="Enter your apartment name"
                                 value={place}
                                 onChange={(e) => setPlace(e.target.value)}
                                 required
+                                className="pl-10"
                             />
                         </div>
-                        <div className="flex items-center gap-4">
-                            <Label className="w-16" htmlFor="phone">
-                                Phone
-                            </Label>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="phone">Phone</Label>
+                        <div className="relative">
+                            <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                             <Input
                                 id="phone"
                                 placeholder="+66912873212"
@@ -164,12 +175,14 @@ export default function BookForm({
                                 value={phone}
                                 onChange={(e) => setPhone(e.target.value)}
                                 required
+                                className="pl-10"
                             />
                         </div>
-                        <div className="flex items-center gap-4">
-                            <Label className="w-16" htmlFor="persons">
-                                Person
-                            </Label>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="persons">Persons</Label>
+                        <div className="relative">
+                            <Users className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                             <Input
                                 id="persons"
                                 placeholder="Enter number of persons"
@@ -180,37 +193,41 @@ export default function BookForm({
                                 }
                                 required
                                 min={1}
+                                className="pl-10"
                             />
                         </div>
-                        <div className="flex items-center gap-4">
-                            <Label className="w-16" htmlFor="payment">
-                                Payment
-                            </Label>
-                            <RadioGroup
-                                className="flex"
-                                value={payment}
-                                onValueChange={(value) => setPayment(value)}
-                            >
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="cash" id="cash" />
-                                    <Label htmlFor="cash">Cash</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem
-                                        value="transfer"
-                                        id="transfer"
-                                    />
-                                    <Label htmlFor="transfer">Transfer</Label>
-                                </div>
-                            </RadioGroup>
-                        </div>
                     </div>
-                    <CardFooter className="flex justify-between mt-7">
-                        <Link href="/routes">
+                    {!isEdit.edit && (
+                        <div className="space-y-2">
+                            <Label>Booking Details</Label>
+                            <div className="bg-gray-100 p-4 rounded-md space-y-2">
+                                <div className="flex items-center">
+                                    <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                                    <span className="text-sm text-gray-600">
+                                        {date.toDateString()}
+                                    </span>
+                                </div>
+                                <div className="flex items-center">
+                                    <Clock className="h-4 w-4 mr-2 text-gray-500" />
+                                    <span className="text-sm text-gray-600">
+                                        {time}
+                                    </span>
+                                </div>
+                                <div className="flex items-center">
+                                    <MapPin className="h-4 w-4 mr-2 text-gray-500" />
+                                    <span className="text-sm text-gray-600">
+                                        {fromm} to {too}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    <CardFooter className="flex justify-between px-0 pt-4">
+                        <Link href="/mybookings">
                             <Button variant="outline">Cancel</Button>
                         </Link>
                         <Button type="submit">
-                            {isEdit.edit ? 'Update' : 'Book'}
+                            {isEdit.edit ? 'Update Booking' : 'Confirm Booking'}
                         </Button>
                     </CardFooter>
                 </form>

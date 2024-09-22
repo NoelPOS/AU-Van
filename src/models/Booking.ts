@@ -8,6 +8,8 @@ export interface BookingDocument extends Document {
     place: string
     phone: string
     persons: number
+    route: string
+    time: string
     createdAt: Date
     updatedAt: Date
 }
@@ -39,6 +41,14 @@ const BookingSchema: Schema<BookingDocument> = new Schema(
             type: Number,
             required: true,
             min: 1,
+        },
+        route: {
+            type: String,
+            required: true,
+        },
+        time: {
+            type: String,
+            required: true,
         },
     },
     {

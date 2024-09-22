@@ -1,7 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import axios from 'axios'
+import { Clock, MapPin, Users } from 'lucide-react'
 
 import {
     Select,
@@ -10,9 +12,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
-
-import TimeSlot from '@/app/ui/timeslot/timeslot'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
 
 const times = [
     '10:00',
@@ -41,16 +44,19 @@ const times = [
     '09:00',
 ]
 
+const data = {
+    assumption_university: ['Siam Paragon', 'Mega Bangna'],
+    siam_paragon: ['Assumption University'],
+    mega_bangna: ['Assumption University'],
+}
+
 export default function Admin() {
-    const data = {
-        assumption_university: ['Siam Paragon', 'Mega Bangna'],
-        siam_paragon: ['Assumption University'],
-        mega_bangna: ['Assumption University'],
-    }
+    const router = useRouter()
     const [from, setFrom] = useState<string>('')
     const [to, setTo] = useState<string>('')
     const [selectedFROM, setSelectedFROM] = useState<boolean>(false)
     const [time, setTime] = useState<string>('')
+    const [seats, setSeats] = useState<number>(0)
 
     function FROMhandleValueChange(value: string): void {
         setFrom(value)
@@ -69,95 +75,130 @@ export default function Admin() {
     function toTitleCase(str: string) {
         return str
             .split('_')
-            .join(' ')
-            .replace(
-                /\w\S*/g,
-                (text) =>
-                    text.charAt(0).toUpperCase() +
-                    text.substring(1).toLowerCase()
+            .map(
+                (word) =>
+                    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
             )
+            .join(' ')
     }
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         try {
-            const response = await axios.post('/api/auth/getbookings', {
+            const response = await axios.post('/api/auth/routes', {
                 from,
                 to,
-                time: [time],
+                time,
+                seats,
             })
+            router.push('/timeslot')
             alert(response.data.message)
         } catch (error) {
-            console.log(error)
+            console.error(error)
             alert('Error adding route')
         }
     }
 
     return (
-        <>
-            <form
-                onSubmit={handleSubmit}
-                className="flex-col justify-center items-center gap-5"
-            >
-                <label> From: </label>
-                <Select value={from} onValueChange={FROMhandleValueChange}>
-                    <SelectTrigger className="lg:w-[200px] w-[150px]">
-                        <SelectValue placeholder="From" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {Object.keys(data).map((each) => {
-                            return (
-                                <SelectItem
-                                    key={each}
-                                    value={toTitleCase(each)}
-                                >
-                                    {toTitleCase(each)}
-                                </SelectItem>
-                            )
-                        })}
-                    </SelectContent>
-                </Select>
-                <label> To: </label>
-                <Select
-                    disabled={!selectedFROM}
-                    value={to}
-                    onValueChange={TOhandleValueChange}
-                >
-                    <SelectTrigger className="lg:w-[200px] w-[150px]">
-                        <SelectValue placeholder="To" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {data[
-                            from
-                                .toLowerCase()
-                                .split(' ')
-                                .join('_') as keyof typeof data
-                        ]?.map((each: string) => {
-                            return (
-                                <SelectItem key={each} value={each}>
-                                    {each}
-                                </SelectItem>
-                            )
-                        })}
-                    </SelectContent>
-                </Select>
-                <label> Time: </label>
-                <Select onValueChange={TIMEhandleValueChange}>
-                    <SelectTrigger className="lg:w-[200px] w-[150px]">
-                        <SelectValue placeholder="Time" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {times.map((each: string) => {
-                            return (
-                                <SelectItem key={each} value={each}>
-                                    {each}
-                                </SelectItem>
-                            )
-                        })}
-                    </SelectContent>
-                </Select>
-                <Button type="submit">Submit</Button>
-            </form>
-        </>
+        <Card className="w-full max-w-md mx-auto">
+            <CardHeader>
+                <CardTitle className="text-2xl font-bold text-center">
+                    Create Timeslot
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="from">From</Label>
+                        <Select
+                            value={from}
+                            onValueChange={FROMhandleValueChange}
+                        >
+                            <SelectTrigger id="from" className="w-full">
+                                <MapPin className="w-4 h-4 mr-2" />
+                                <SelectValue placeholder="Select departure" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {Object.keys(data).map((each) => (
+                                    <SelectItem
+                                        key={each}
+                                        value={toTitleCase(each)}
+                                    >
+                                        {toTitleCase(each)}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="to">To</Label>
+                        <Select
+                            disabled={!selectedFROM}
+                            value={to}
+                            onValueChange={TOhandleValueChange}
+                        >
+                            <SelectTrigger id="to" className="w-full">
+                                <MapPin className="w-4 h-4 mr-2" />
+                                <SelectValue placeholder="Select destination" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {data[
+                                    from
+                                        .toLowerCase()
+                                        .split(' ')
+                                        .join('_') as keyof typeof data
+                                ]?.map((each: string) => (
+                                    <SelectItem key={each} value={each}>
+                                        {each}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="time">Time</Label>
+                        <Select
+                            value={time}
+                            onValueChange={TIMEhandleValueChange}
+                        >
+                            <SelectTrigger id="time" className="w-full">
+                                <Clock className="w-4 h-4 mr-2" />
+                                <SelectValue placeholder="Select time" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {times.map((each: string) => (
+                                    <SelectItem key={each} value={each}>
+                                        {each}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="seats">Number of Seats</Label>
+                        <div className="relative">
+                            <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                            <Input
+                                id="seats"
+                                type="number"
+                                placeholder="Enter number of seats"
+                                className="pl-10"
+                                value={seats || ''}
+                                onChange={(event) =>
+                                    setSeats(Number(event.target.value))
+                                }
+                            />
+                        </div>
+                    </div>
+
+                    <Button type="submit" className="w-full">
+                        Create Timeslot
+                    </Button>
+                </form>
+            </CardContent>
+        </Card>
     )
 }

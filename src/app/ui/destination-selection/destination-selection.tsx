@@ -1,6 +1,6 @@
 'use client'
-import { useState, useEffect } from 'react'
 
+import { useState, useEffect } from 'react'
 import {
     Select,
     SelectContent,
@@ -8,8 +8,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
-
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import TimeSlot from '@/app/ui/timeslot/timeslot'
+import { ArrowRight, MapPin } from 'lucide-react'
 
 export default function DestinationSelection() {
     const data = {
@@ -44,54 +46,92 @@ export default function DestinationSelection() {
     }
 
     return (
-        <>
-            <div className="flex justify-center items-center gap-5">
-                <Select value={from} onValueChange={FROMhandleValueChange}>
-                    <SelectTrigger className="lg:w-[200px] w-[150px]">
-                        <SelectValue placeholder="From" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {Object.keys(data).map((each) => {
-                            return (
-                                <SelectItem
-                                    key={each}
-                                    value={toTitleCase(each)}
+        <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-3xl mx-auto">
+                <Card className="shadow-lg">
+                    <CardHeader className="text-center">
+                        <CardTitle className="text-3xl font-bold">
+                            Choose Your Destination
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex flex-col md:flex-row justify-center items-center gap-5 mb-8">
+                            <div className="w-full md:w-auto">
+                                <label
+                                    htmlFor="from-select"
+                                    className="block text-sm font-medium text-gray-700 mb-1"
                                 >
-                                    {toTitleCase(each)}
-                                </SelectItem>
-                            )
-                        })}
-                    </SelectContent>
-                </Select>
-                -
-                <Select
-                    disabled={!selectedFROM}
-                    value={to}
-                    onValueChange={TOhandleValueChange}
-                >
-                    <SelectTrigger className="lg:w-[200px] w-[150px]">
-                        <SelectValue placeholder="To" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {data[
-                            from
-                                .toLowerCase()
-                                .split(' ')
-                                .join('_') as keyof typeof data
-                        ]?.map((each: string) => {
-                            return (
-                                <SelectItem key={each} value={each}>
-                                    {each}
-                                </SelectItem>
-                            )
-                        })}
-                    </SelectContent>
-                </Select>
+                                    From
+                                </label>
+                                <Select
+                                    value={from}
+                                    onValueChange={FROMhandleValueChange}
+                                >
+                                    <SelectTrigger
+                                        id="from-select"
+                                        className="w-full md:w-[200px]"
+                                    >
+                                        <MapPin className="mr-2 h-4 w-4 text-gray-400" />
+                                        <SelectValue placeholder="From" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {Object.keys(data).map((each) => (
+                                            <SelectItem
+                                                key={each}
+                                                value={toTitleCase(each)}
+                                            >
+                                                {toTitleCase(each)}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <ArrowRight className="hidden md:block h-6 w-6 text-gray-400" />
+                            <div className="w-full md:w-auto">
+                                <label
+                                    htmlFor="to-select"
+                                    className="block text-sm font-medium text-gray-700 mb-1"
+                                >
+                                    To
+                                </label>
+                                <Select
+                                    disabled={!selectedFROM}
+                                    value={to}
+                                    onValueChange={TOhandleValueChange}
+                                >
+                                    <SelectTrigger
+                                        id="to-select"
+                                        className="w-full md:w-[200px]"
+                                    >
+                                        <MapPin className="mr-2 h-4 w-4 text-gray-400" />
+                                        <SelectValue placeholder="To" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {data[
+                                            from
+                                                .toLowerCase()
+                                                .split(' ')
+                                                .join('_') as keyof typeof data
+                                        ]?.map((each: string) => (
+                                            <SelectItem key={each} value={each}>
+                                                {each}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        {from && to && (
+                            <div className="bg-white p-4 rounded-lg shadow">
+                                <h2 className="text-xl font-semibold mb-4 text-center">
+                                    Available Time Slots
+                                </h2>
+                                <TimeSlot from={from} to={to} />
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
             </div>
-
-            <div className="flex">
-                <TimeSlot from={from} to={to} />
-            </div>
-        </>
+        </div>
     )
 }

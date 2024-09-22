@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { Clock, Users, ArrowRight } from 'lucide-react'
+import { Clock, Users } from 'lucide-react'
 
 export default function TimeSlot({ from, to }: { from: string; to: string }) {
     const [times, setTimes] = useState<any[]>([])
@@ -43,11 +43,11 @@ export default function TimeSlot({ from, to }: { from: string; to: string }) {
     }, [from, to, hasBothChanged])
 
     return (
-        <Card className="w-full mx-auto shadow-md">
+        <Card className="w-full mx-auto">
             <CardHeader>
-                <CardTitle className="flex items-center justify-center text-xl font-semibold">
+                <CardTitle className="text-xl">
                     <span className="text-yellow-500">{from}</span>
-                    <ArrowRight className="mx-2 text-gray-400" />
+                    <span className="mx-2">&rarr;</span>
                     <span className="text-rose-500">{to}</span>
                 </CardTitle>
             </CardHeader>
@@ -58,14 +58,18 @@ export default function TimeSlot({ from, to }: { from: string; to: string }) {
                             <Link
                                 key={index}
                                 href={{
-                                    pathname: 'book',
+                                    pathname: 'admin/timeslotform',
                                     query: {
                                         time: time.time,
+                                        route: `${from.toLowerCase().split(' ').join('_')}_to_${to
+                                            .toLowerCase()
+                                            .split(' ')
+                                            .join('_')}`,
                                         from: from,
                                         to: to,
                                     },
                                 }}
-                                className="block "
+                                className="block"
                             >
                                 <Button
                                     variant="outline"
