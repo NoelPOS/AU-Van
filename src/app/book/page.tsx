@@ -1,6 +1,6 @@
 'use client'
 import NavBar from '@/app/ui/navbar/navbar'
-import BookForm from '@/app/ui/timeslot/bookForm'
+import BookFormPage from '@/app/ui/timeslot/bookForm'
 
 export default function Page() {
     const date = new Date()
@@ -12,7 +12,7 @@ export default function Page() {
             </div>
 
             <div className="flex justify-center items-center">
-                <BookForm date={date} isEdit={{ edit: false, id: 0 }} />
+                <BookFormPage date={date} isEdit={{ edit: false, id: 0 }} />
             </div>
         </main>
     )

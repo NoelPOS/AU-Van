@@ -24,8 +24,17 @@ import Link from 'next/link'
 import axios from 'axios'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Clock, MapPin, Users } from 'lucide-react'
+import { Suspense } from 'react'
 
-export default function TimeslotAdmin() {
+export default function TimeslotPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <TimeslotAdmin />
+        </Suspense>
+    )
+}
+
+function TimeslotAdmin() {
     const router = useRouter()
     const params = useSearchParams()
     const time = params.get('time')

@@ -62,7 +62,8 @@ export default function Dashboard() {
                                 Welcome back, Admin!
                             </CardTitle>
                             <CardDescription>
-                                Here's what's happening with your business today
+                                Here&#39;s what&#39;s happening with your
+                                business today
                             </CardDescription>
                         </CardHeader>
                         <CardFooter>
@@ -103,7 +104,7 @@ export default function Dashboard() {
                     <Tabs defaultValue="bookings" className="w-full">
                         <TabsList className="mb-4">
                             <TabsTrigger value="bookings">
-                                Today's Bookings
+                                Today&#39;s Bookings
                             </TabsTrigger>
                             <TabsTrigger value="timeslots">
                                 Timeslots

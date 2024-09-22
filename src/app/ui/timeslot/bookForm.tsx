@@ -20,8 +20,23 @@ import { useSession } from 'next-auth/react'
 import axios from 'axios'
 import { useSearchParams } from 'next/navigation'
 import { User, MapPin, Phone, Users, Calendar, Clock } from 'lucide-react'
+import { Suspense } from 'react'
 
-export default function BookForm({
+export default function BookFormPage({
+    date,
+    isEdit,
+}: {
+    date: Date
+    isEdit: { edit: boolean; id: any }
+}) {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <BookForm date={date} isEdit={isEdit} />
+        </Suspense>
+    )
+}
+
+function BookForm({
     date,
     isEdit,
 }: {
