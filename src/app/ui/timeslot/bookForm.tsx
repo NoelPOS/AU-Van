@@ -129,8 +129,9 @@ function BookForm({
 
         try {
             const response = await axios.put('/api/auth/booking', bookingData)
+
             alert(response.data.message)
-            router.push('/')
+            router.back()
         } catch (error) {
             console.error('An error occurred while booking:', error)
         }

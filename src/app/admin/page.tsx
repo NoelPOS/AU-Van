@@ -6,6 +6,7 @@ import TimeSlot from '../ui/timeslot/timeslotadmin'
 import DisplayDate from '../ui/display-date/display-date'
 import NavBar from '../ui/navbar/navbar'
 import { Button } from '@/components/ui/button'
+import { useRouter } from 'next/navigation'
 import {
     Card,
     CardContent,
@@ -35,7 +36,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PlusCircle, Edit, Trash2 } from 'lucide-react'
 
 export default function Dashboard() {
+    const router = useRouter()
     const [bookings, setBookings] = useState<any[]>([])
+
+    const handleDelete = async (id: string) => {
+        try {
+            await fetch(`/api/auth/booking/deletebyid`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ bookingId: id }),
+            })
+            setBookings(bookings.filter((booking) => booking._id !== id))
+            router.refresh()
+            alert('Booking deleted successfully')
+        } catch (error) {
+            console.error('Failed to delete booking:', error)
+        }
+    }
 
     useEffect(() => {
         const fetchBookings = async () => {
@@ -119,138 +138,133 @@ export default function Dashboard() {
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="overflow-x-auto">
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>
-                                                        Customer
-                                                    </TableHead>
-                                                    <TableHead className="hidden sm:table-cell">
-                                                        Pick-Up
-                                                    </TableHead>
-                                                    <TableHead className="hidden sm:table-cell">
-                                                        People
-                                                    </TableHead>
-                                                    <TableHead className="hidden md:table-cell">
-                                                        Time
-                                                    </TableHead>
-                                                    <TableHead className="hidden md:table-cell">
-                                                        Route
-                                                    </TableHead>
-                                                    <TableHead>Phone</TableHead>
-                                                    <TableHead>
-                                                        Actions
-                                                    </TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {bookings.map(
-                                                    (booking, index) => (
-                                                        <TableRow key={index}>
-                                                            <TableCell className="font-medium">
-                                                                {booking.name}
-                                                            </TableCell>
-                                                            <TableCell className="hidden sm:table-cell">
-                                                                {booking.place}
-                                                            </TableCell>
-                                                            <TableCell className="hidden sm:table-cell">
-                                                                {
-                                                                    booking.persons
-                                                                }
-                                                            </TableCell>
-                                                            <TableCell className="hidden md:table-cell">
-                                                                {booking.time}
-                                                            </TableCell>
-                                                            <TableCell className="hidden md:table-cell">
-                                                                {booking.route}
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                {booking.phone}
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                <div className="flex space-x-2">
-                                                                    <Dialog>
-                                                                        <DialogTrigger
-                                                                            asChild
-                                                                        >
-                                                                            <Button
-                                                                                variant="outline"
-                                                                                size="icon"
+                                    {bookings.length > 0 ? (
+                                        <div className="overflow-x-auto">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead>
+                                                            Customer
+                                                        </TableHead>
+                                                        <TableHead className="hidden sm:table-cell">
+                                                            Pick-Up
+                                                        </TableHead>
+                                                        <TableHead className="hidden sm:table-cell">
+                                                            People
+                                                        </TableHead>
+                                                        <TableHead className="hidden md:table-cell">
+                                                            Time
+                                                        </TableHead>
+                                                        <TableHead className="hidden md:table-cell">
+                                                            Route
+                                                        </TableHead>
+                                                        <TableHead>
+                                                            Phone
+                                                        </TableHead>
+                                                        <TableHead>
+                                                            Actions
+                                                        </TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {bookings.map(
+                                                        (booking, index) => (
+                                                            <TableRow
+                                                                key={index}
+                                                            >
+                                                                <TableCell className="font-medium">
+                                                                    {
+                                                                        booking.name
+                                                                    }
+                                                                </TableCell>
+                                                                <TableCell className="hidden sm:table-cell">
+                                                                    {
+                                                                        booking.place
+                                                                    }
+                                                                </TableCell>
+                                                                <TableCell className="hidden sm:table-cell">
+                                                                    {
+                                                                        booking.persons
+                                                                    }
+                                                                </TableCell>
+                                                                <TableCell className="hidden md:table-cell">
+                                                                    {
+                                                                        booking.time
+                                                                    }
+                                                                </TableCell>
+                                                                <TableCell className="hidden md:table-cell">
+                                                                    {
+                                                                        booking.route
+                                                                    }
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    {
+                                                                        booking.phone
+                                                                    }
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <div className="flex space-x-2">
+                                                                        <Dialog>
+                                                                            <DialogTrigger
+                                                                                asChild
                                                                             >
-                                                                                <Edit className="h-4 w-4" />
-                                                                            </Button>
-                                                                        </DialogTrigger>
-                                                                        <DialogContent>
-                                                                            <DialogHeader>
-                                                                                <DialogTitle>
-                                                                                    Edit
-                                                                                    Booking
-                                                                                </DialogTitle>
-                                                                            </DialogHeader>
-                                                                            <DialogDescription>
-                                                                                Edit
-                                                                                the
-                                                                                booking
-                                                                                details
-                                                                                below
-                                                                            </DialogDescription>
-                                                                            {/* Add form fields here */}
-                                                                            <DialogFooter>
-                                                                                <Button>
-                                                                                    Save
-                                                                                    Changes
+                                                                                <Button
+                                                                                    variant="outline"
+                                                                                    size="icon"
+                                                                                >
+                                                                                    <Trash2 className="h-4 w-4" />
                                                                                 </Button>
-                                                                            </DialogFooter>
-                                                                        </DialogContent>
-                                                                    </Dialog>
-                                                                    <Dialog>
-                                                                        <DialogTrigger
-                                                                            asChild
-                                                                        >
-                                                                            <Button
-                                                                                variant="outline"
-                                                                                size="icon"
-                                                                            >
-                                                                                <Trash2 className="h-4 w-4" />
-                                                                            </Button>
-                                                                        </DialogTrigger>
-                                                                        <DialogContent>
-                                                                            <DialogHeader>
-                                                                                <DialogTitle>
-                                                                                    Delete
-                                                                                    Booking
-                                                                                </DialogTitle>
-                                                                            </DialogHeader>
-                                                                            <DialogDescription>
-                                                                                Are
-                                                                                you
-                                                                                sure
-                                                                                you
-                                                                                want
-                                                                                to
-                                                                                delete
-                                                                                this
-                                                                                booking?
-                                                                            </DialogDescription>
-                                                                            <DialogFooter>
-                                                                                <Button variant="destructive">
-                                                                                    Delete
-                                                                                </Button>
-                                                                                <Button variant="outline">
-                                                                                    Cancel
-                                                                                </Button>
-                                                                            </DialogFooter>
-                                                                        </DialogContent>
-                                                                    </Dialog>
-                                                                </div>
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    )
-                                                )}
-                                            </TableBody>
-                                        </Table>
-                                    </div>
+                                                                            </DialogTrigger>
+                                                                            <DialogContent>
+                                                                                <DialogHeader>
+                                                                                    <DialogTitle>
+                                                                                        Delete
+                                                                                        Booking
+                                                                                    </DialogTitle>
+                                                                                </DialogHeader>
+                                                                                <DialogDescription>
+                                                                                    Are
+                                                                                    you
+                                                                                    sure
+                                                                                    you
+                                                                                    want
+                                                                                    to
+                                                                                    delete
+                                                                                    this
+                                                                                    booking?
+                                                                                </DialogDescription>
+                                                                                <DialogFooter>
+                                                                                    <Button
+                                                                                        onClick={() => {
+                                                                                            handleDelete(
+                                                                                                booking._id
+                                                                                            )
+                                                                                        }}
+                                                                                        variant="destructive"
+                                                                                    >
+                                                                                        Delete
+                                                                                    </Button>
+                                                                                    <Button variant="outline">
+                                                                                        Cancel
+                                                                                    </Button>
+                                                                                </DialogFooter>
+                                                                            </DialogContent>
+                                                                        </Dialog>
+                                                                    </div>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        )
+                                                    )}
+                                                </TableBody>
+                                            </Table>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-8">
+                                            <p className="text-lg text-gray-500">
+                                                No bookings for today.
+                                            </p>
+                                        </div>
+                                    )}
                                 </CardContent>
                             </Card>
                         </TabsContent>

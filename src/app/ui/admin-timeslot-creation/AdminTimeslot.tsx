@@ -91,11 +91,10 @@ export default function Admin() {
                 time,
                 seats,
             })
-            router.push('/timeslot')
+            router.push('/admin/timeslot')
             alert(response.data.message)
         } catch (error) {
             console.error(error)
-            alert('Error adding route')
         }
     }
 

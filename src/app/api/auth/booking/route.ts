@@ -175,12 +175,25 @@ export async function DELETE(req: NextRequest) {
 
         // Extract the route and time from the booking
         const { route, time, persons } = booking
-        console.log('Route:', route, 'Time:', time, 'Persons:', persons)
+
+        const routeField = `${route}.timeSlots`
+
+        // Find the timeslot data
+        const timeslotData = await Timeslots.findOne({
+            [routeField]: { $elemMatch: { time: time } },
+        })
+
+        const testing = timeslotData[route].timeSlots.find(
+            (slot: { time: string }) => slot.time === time
+        )
+
+        console.log('testing:', testing)
 
         // Update the seat count in the Timeslot collection
+
         await Timeslots.updateOne(
-            { route, time }, // Match the correct timeslot
-            { $inc: { seats: persons } } // Increment the available seats
+            { [routeField]: { $elemMatch: { time: time } } },
+            { $inc: { [`${routeField}.$.seats`]: persons } }
         )
 
         // Delete the booking
@@ -193,7 +206,7 @@ export async function DELETE(req: NextRequest) {
             )
         }
 
-        return NextResponse.json({ message: 'Booking deleted successfully' })
+        return NextResponse.json({ message: 'bookind delete successful' })
     } catch (error: any) {
         console.error('Error deleting booking:', error)
         return NextResponse.json(
@@ -236,13 +249,17 @@ export async function PUT(req: NextRequest) {
         }
 
         // Adjust the available seats in the Timeslot model based on the persons change
-        const personsDiff = oldPersons - persons
-        if (personsDiff !== 0) {
-            await Timeslots.updateOne(
-                { route, time }, // Match the correct timeslot
-                { $inc: { seats: personsDiff } } // Adjust available seats accordingly
-            )
-        }
+        const routeField = `${route}.timeSlots`
+
+        // Update the seat count in the Timeslot collection
+        await Timeslots.updateOne(
+            { [routeField]: { $elemMatch: { time: time } } },
+            {
+                $inc: {
+                    [`${routeField}.$.seats`]: oldPersons - persons,
+                },
+            }
+        )
 
         return NextResponse.json({ message: 'Booking updated successfully' })
     } catch (error: any) {
