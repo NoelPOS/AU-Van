@@ -56,6 +56,18 @@ export async function POST(req: NextRequest) {
             .toLowerCase()
             .replace(/ /g, '_')}`
 
+        // Check if the time slot already exists
+        const existingRoute = await Timeslots.findOne({
+            [`${routeField}.timeSlots`]: { $elemMatch: { time } },
+        })
+
+        if (existingRoute) {
+            return NextResponse.json(
+                { error: 'Time slot already exists for this route' },
+                { status: 400 }
+            )
+        }
+
         // Add or update the route with new time and seats
         const update = {
             $addToSet: {

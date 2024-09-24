@@ -134,7 +134,7 @@ function TimeslotAdmin() {
         }
 
         fetchTimes()
-    }, [from, to, usableTimes])
+    }, [])
 
     return (
         <Card className="w-full max-w-2xl mx-auto mt-8 shadow-lg">
