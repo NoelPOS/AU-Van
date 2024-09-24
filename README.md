@@ -10,6 +10,7 @@ AU Van is an online van booking system designed for the van service at Assumptio
 
 Our appointment system introduces a seamless online booking process that addresses these challenges. The application features two main parts: an admin dashboard and a user interface.
 
+**Note** : For admin, log in with testing@gmail.com and password is 123456
 **Note**: When logged in with an admin email, an "Admin" button appears in the navbar for easy access to the admin page. Regular users will see standard navigation options.
 
 ### Admin Features:
@@ -51,8 +52,14 @@ The AU Van project is built using:
 
 #### /admin
 ![image](https://github.com/user-attachments/assets/654dd0b0-e743-42a3-bf86-960593e69437)
-![image](https://github.com/user-attachments/assets/13f64097-85b5-4600-92b8-3629bfe38191)
+![image](https://github.com/user-attachments/assets/e59ea9d5-59e3-42d7-9271-b58b00778ec1)
 
+#### /admin when clicked add new timeslot and after creating timelsot
+![image](https://github.com/user-attachments/assets/3f9f21d5-3247-46d4-bf9d-6742789863cb)
+![image](https://github.com/user-attachments/assets/de481125-5a63-41d4-a719-e48ed9ecbd9a)
+
+#### /admin when editing timeslot
+![image](https://github.com/user-attachments/assets/306c8c2b-9536-4fb8-a54e-7bd33b97bc52)
 
 
 ### User 
@@ -61,10 +68,13 @@ The AU Van project is built using:
 ![image](https://github.com/user-attachments/assets/83f172f5-8da7-401e-acc3-45de583fdd7d)
 
 #### /routes
-![image](https://github.com/user-attachments/assets/25b1943f-61a8-4286-919d-c9312c93598a)
+![image](https://github.com/user-attachments/assets/1241269e-fb76-4a51-b638-4ceeca0488ac)
 
 #### /book
 ![image](https://github.com/user-attachments/assets/689ad31c-e440-49dc-b00f-4194ab2561d3)
+
+#### /book when making booking
+![image](https://github.com/user-attachments/assets/9aa01a9c-50c2-41d6-ab3e-2da18a6f4c60)
 
 #### /mybookings
 ![image](https://github.com/user-attachments/assets/e5b9090d-f3fa-4720-9a1a-a8549ee1933a)
