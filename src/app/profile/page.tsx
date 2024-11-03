@@ -32,12 +32,47 @@ import {
 } from '@/components/ui/alert-dialog'
 
 function Profile() {
-    const { data: session } = useSession()
+    const { data: session, status } = useSession()
     const [userData, setUserData] = useState(session?.user)
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
     const [isEditing, setIsEditing] = useState(false)
     const router = useRouter()
+
+    useEffect(() => {
+        if (status === 'loading') return // Wait for the session to load
+
+        if (status === 'unauthenticated') {
+            router.push('/auth') // Redirect to signin page if not authenticated
+            return
+        }
+
+        // Only fetch user data if authenticated and data not already loaded
+        if (status === 'authenticated' && session?.user?._id && !userData) {
+            const fetchUserData = async () => {
+                try {
+                    const response = await axios.post('/api/auth/userdata/', {
+                        id: session.user._id,
+                    })
+                    setUserData(response.data)
+                } catch (error) {
+                    console.error(error)
+                    setError('Failed to fetch user data')
+                }
+            }
+            fetchUserData()
+        }
+    }, [status, session, userData, router])
+
+    // If still loading, you might want to show a loading state
+    if (status === 'loading') {
+        return <div>Loading...</div>
+    }
+
+    // If not authenticated, don't render anything (will redirect)
+    if (status === 'unauthenticated') {
+        return null
+    }
 
     const handleDelete = async () => {
         try {
@@ -84,23 +119,6 @@ function Profile() {
             setError(error.response?.data?.error || 'Failed to update profile')
         }
     }
-
-    useEffect(() => {
-        if (session?.user?._id && !userData) {
-            const fetchUserData = async () => {
-                try {
-                    const response = await axios.post('/api/auth/userdata/', {
-                        id: session.user._id,
-                    })
-                    setUserData(response.data)
-                } catch (error) {
-                    console.error(error)
-                    setError('Failed to fetch user data')
-                }
-            }
-            fetchUserData()
-        }
-    }, [session, userData])
 
     return (
         <div className="min-h-screen bg-gray-100">

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import NavBar from '../ui/navbar/navbar'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -42,25 +43,43 @@ interface Booking {
 export default function MyBookings() {
     const [bookings, setBookings] = useState<Booking[]>([])
     const [error, setError] = useState<string | null>(null)
-    const { data: session } = useSession()
+    const router = useRouter()
+    const { data: session, status } = useSession()
     const userid = session?.user._id
 
     useEffect(() => {
-        const fetchBookings = async () => {
-            try {
-                const response = await axios.get(
-                    `/api/auth/booking?userid=${userid}`
-                )
-                setBookings(response.data)
-            } catch (err) {
-                setError('Failed to fetch bookings.')
-            }
+        if (status === 'loading') return // Wait for the session to load
+
+        if (status === 'unauthenticated') {
+            router.push('/auth') // Redirect to signin page if not authenticated
+            return
         }
 
-        if (userid) {
+        // Only fetch bookings if authenticated
+        if (status === 'authenticated' && userid) {
+            const fetchBookings = async () => {
+                try {
+                    const response = await axios.get(
+                        `/api/auth/booking?userid=${userid}`
+                    )
+                    setBookings(response.data)
+                } catch (err) {
+                    setError('Failed to fetch bookings.')
+                }
+            }
             fetchBookings()
         }
-    }, [userid])
+    }, [status, userid, router])
+
+    // If still loading, show loading state
+    if (status === 'loading') {
+        return <div>Loading...</div>
+    }
+
+    // If not authenticated, don't render anything (will redirect)
+    if (status === 'unauthenticated') {
+        return null
+    }
 
     const handleDelete = async (id: string) => {
         try {
