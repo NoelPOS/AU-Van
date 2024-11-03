@@ -120,10 +120,7 @@ export async function GET(req: NextRequest) {
         try {
             const bookings = await Booking.find({ userid })
             if (bookings.length === 0) {
-                return NextResponse.json(
-                    { message: 'No bookings found for this user' },
-                    { status: 404 }
-                )
+                return NextResponse.json([])
             }
             return NextResponse.json(bookings)
         } catch (error) {

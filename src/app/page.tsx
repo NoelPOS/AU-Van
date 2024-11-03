@@ -42,6 +42,9 @@ function UnauthenticatedState() {
                     <CardTitle className="text-2xl font-bold text-center">
                         Welcome aboard!
                     </CardTitle>
+                    <CardContent className="text-xl font-bold text-center">
+                        For Admin - use testing@gmail.com and 123456!
+                    </CardContent>
                 </CardHeader>
                 <CardContent className="flex flex-col items-center">
                     <div className="w-32 h-32 relative mb-6">
