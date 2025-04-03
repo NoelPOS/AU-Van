@@ -1,10 +1,9 @@
 'use client'
 
 import React, { FormEvent, useEffect, useState } from 'react'
-import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import axios from 'axios'
-import { signOut } from 'next-auth/react'
+import { signOut, useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -31,7 +30,7 @@ import {
 } from '@/components/ui/alert-dialog'
 
 function Profile() {
-  const { data: session, status } = useSession()
+  const { data: session, status, update } = useSession()
   const [userData, setUserData] = useState(session?.user)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -112,6 +111,12 @@ function Profile() {
       setSuccess('Profile updated successfully')
       setUserData(response.data)
       setIsEditing(false)
+      if (session) {
+        update({ ...session, user: { ...session.user, ...response.data } })
+      }
+      setTimeout(() => {
+        setSuccess('')
+      }, 2000)
     } catch (error: any) {
       console.error(error.response?.data?.error || 'An error occurred')
       setError(error.response?.data?.error || 'Failed to update profile')
