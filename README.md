@@ -1,99 +1,109 @@
 # AU Van
 
-## Team Members
+Production-oriented van booking platform for Assumption University, evolving from a campus MVP into a LINE-integrated system.
 
-- [Jan Poonthong](https://github.com/JanPoonthong)
-- [Khin Myo Aye](https://github.com/Ariel-Khin99)
-- [Noel Paing Oak Soe](https://github.com/NoelPOS)
+## Recruiter Quick View
+- **Problem solved:** replaces manual LINE booking with structured booking, admin operations, and audit-friendly workflows.
+- **Current state:** working web app with admin + student booking flows.
+- **Target state:** admin web portal + student LIFF app + LINE bot/rich menu integration.
+- **Focus areas:** backend architecture, reliability, role-based operations, and production readiness.
 
-## Project Description
+## Project Status
+**In Progress (Active Development)**
 
-AU Van is an online van booking system designed for the van service at Assumption University of Thailand. The current system relies on manual bookings through the LINE app and daily posted schedules, which can be tedious and inefficient.
+This repository is intentionally transparent about what is complete vs planned.
 
-Our appointment system introduces a seamless online booking process that addresses these challenges. The application features two main parts: an admin dashboard and a user interface.
+## What Is Implemented
+- User authentication (credentials + Google via NextAuth)
+- Role-based admin access control
+- Route and timeslot management
+- Seat map and seat locking workflow
+- Booking creation, updates, and cancellation
+- Payment records with manual status update flow
+- In-app and email notification foundations
+- Admin dashboards for bookings, payments, users, and timeslots
 
-**Note** : For admin, log in with testing@gmail.com and password is 123456
+## What Is In Progress
+- LIFF student experience and LINE identity flow
+- LINE Official Account bot + rich menu entry points
+- Manual PromptPay proof submission and approval UX hardening
+- Reminder scheduling and delivery retries
+- Architecture hardening toward stronger Clean Architecture boundaries
 
-**Note**: When logged in with an admin email, an "Admin" button appears in the navbar for easy access to the admin page. Regular users will see standard navigation options.
+## Architecture
+### Current (implemented)
+- Next.js App Router monolith
+- API routes + service layer + Mongoose models
+- NextAuth session-based auth
+- MongoDB persistence
+- SSE for real-time seat/notification updates
 
-### Admin Features:
+### Target (planned)
+- Admin Portal (web)
+- Student LIFF App (mobile-first inside LINE)
+- LINE Bot webhook and rich menu integration
+- Background worker for reminders/retries
 
-- Create time slots for specific routes.
-- Delete and update user bookings.
-- View statistics on today's bookings.
+See detailed implementation and architecture roadmap:
+- [`docs/system-implementation-plan.md`](./docs/system-implementation-plan.md)
 
-### User Features:
+## Engineering Direction
+This project is being refactored and expanded using:
+- Clean Architecture boundaries
+- SOLID principles
+- Design patterns where appropriate (Strategy, Factory, Observer/Event-driven, Adapter)
 
-- Register and create an account.
-- Check the schedule for the day.
-- Select a time slot and make a booking.
-- View their booking history.
-- Access a profile page to update their password or delete their account.
+## Tech Stack
+- **Frontend:** Next.js, React, Tailwind CSS, shadcn/ui
+- **Backend:** Next.js Route Handlers, TypeScript
+- **Auth:** NextAuth
+- **Database:** MongoDB + Mongoose
+- **Notifications:** SSE + Nodemailer
+- **Validation:** Zod
 
-### Technology Stack
+## Local Development
+### 1) Install
+```bash
+npm install
+```
 
-The AU Van project is built using:
+### 2) Configure environment
+Create `.env.local`:
+```env
+MONGODB_URI=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+NEXTAUTH_SECRET=
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=noreply@auvan.com
+SEAT_LOCK_TIMEOUT_MS=300000
+```
 
-- **Next.js**: For server-side rendering and dynamic routing, enhancing performance and SEO.
-- **shadcn/ui**: A UI component library for rapid development and consistent design.
-- **NextAuth**: For secure user authentication and easy sign-up/login.
-- **Vercel**: For seamless deployment and optimized performance.
-- **MongoDB**: A NoSQL database for flexible data management and efficient querying.
+### 3) Run
+```bash
+npm run dev
+```
 
-## Screenshots
+## Roadmap (High Level)
+- Phase 1: data model and admin workflow hardening
+- Phase 2: LIFF MVP for student booking
+- Phase 3: LINE bot + rich menu + webhook integration
+- Phase 4: reminder worker, retries, monitoring
+- Phase 5: UAT and production rollout
 
-### Auth Screen
+## Why This Repo Is Portfolio-Relevant
+- Demonstrates transition from MVP to production architecture
+- Shows real-world constraints (manual operations, approval flows, role separation)
+- Includes concurrency and operational reliability concerns
+- Integrates product, backend, and platform thinking in one system
 
-#### Login
-
-![image](https://github.com/user-attachments/assets/fbc20ea7-b86d-4122-9288-7636dc97dc72)
-
-#### Sign Up
-
-![image](https://github.com/user-attachments/assets/e8e84b46-d6aa-463e-aef8-d0a62f603944)
-
-### Admin
-
-#### /
-
-![image](https://github.com/user-attachments/assets/3a7986f1-fc45-433b-a8a2-0dbc09e4b0ce)
-
-#### /admin
-
-![image](https://github.com/user-attachments/assets/654dd0b0-e743-42a3-bf86-960593e69437)
-![image](https://github.com/user-attachments/assets/e59ea9d5-59e3-42d7-9271-b58b00778ec1)
-
-#### /admin when clicked add new timeslot and after creating timelsot
-
-![image](https://github.com/user-attachments/assets/3f9f21d5-3247-46d4-bf9d-6742789863cb)
-![image](https://github.com/user-attachments/assets/de481125-5a63-41d4-a719-e48ed9ecbd9a)
-
-#### /admin when editing timeslot
-
-![image](https://github.com/user-attachments/assets/306c8c2b-9536-4fb8-a54e-7bd33b97bc52)
-
-### User
-
-#### /
-
-![image](https://github.com/user-attachments/assets/83f172f5-8da7-401e-acc3-45de583fdd7d)
-
-#### /routes
-
-![image](https://github.com/user-attachments/assets/1241269e-fb76-4a51-b638-4ceeca0488ac)
-
-#### /book
-
-![image](https://github.com/user-attachments/assets/689ad31c-e440-49dc-b00f-4194ab2561d3)
-
-#### /book when making booking
-
-![image](https://github.com/user-attachments/assets/9aa01a9c-50c2-41d6-ab3e-2da18a6f4c60)
-
-#### /mybookings
-
-![image](https://github.com/user-attachments/assets/e5b9090d-f3fa-4720-9a1a-a8549ee1933a)
-
-#### /profile
-
-![image](https://github.com/user-attachments/assets/7926096f-cc17-43bc-8d54-0d76175f54d9)
+## Contact
+Noel Paing Oak Soe  
+Bangkok, Thailand  
+Email: noelpaingoaksoe@gmail.com  
+Portfolio: https://noelpos-dev.vercel.app  
+GitHub: https://github.com/NoelPOS
