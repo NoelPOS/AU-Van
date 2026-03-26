@@ -1,0 +1,84 @@
+import { NextRequest } from "next/server";
+import { requireAuth, requireAdmin } from "@/lib/auth-guard";
+import { bookingService } from "@/services/booking.service";
+import { idempotencyService } from "@/services/idempotency.service";
+import { createBookingSchema } from "@/validators/booking.validator";
+import { successResponse, errorResponse, serverErrorResponse, validationErrorResponse } from "@/lib/api-response";
+// Import to register event listeners
+import "@/services/notification.service";
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const all = searchParams.get("all");
+
+    if (all === "true") {
+      const { session, error } = await requireAdmin();
+      if (error) return error;
+
+      const result = await bookingService.getAllBookings({
+        status: searchParams.get("status") || undefined,
+        date: searchParams.get("date") || undefined,
+        routeId: searchParams.get("routeId") || undefined,
+        page: Number(searchParams.get("page")) || 1,
+        limit: Number(searchParams.get("limit")) || 20,
+      });
+      return successResponse(result);
+    }
+
+    const { session, error } = await requireAuth();
+    if (error) return error;
+
+    const bookings = await bookingService.getUserBookings(session!.user._id);
+    return successResponse(bookings);
+  } catch (error) {
+    return serverErrorResponse(error);
+  }
+}
+
+export async function POST(req: NextRequest) {
+  let idempotencyRecordId: string | null = null;
+  try {
+    const { session, error } = await requireAuth();
+    if (error) return error;
+
+    const body = await req.json();
+    const parsed = createBookingSchema.safeParse(body);
+    if (!parsed.success) {
+      return validationErrorResponse(parsed.error.flatten().fieldErrors);
+    }
+
+    const idem = await idempotencyService.startRequest({
+      userId: session!.user._id,
+      scope: "booking_create",
+      key: req.headers.get("idempotency-key"),
+      payload: parsed.data,
+    });
+    if (idem.mode === "replay") {
+      return successResponse(idem.data, "Idempotent replay", idem.statusCode);
+    }
+    if (idem.mode === "conflict") {
+      return errorResponse(idem.reason, 409);
+    }
+    if (idem.mode === "new") {
+      idempotencyRecordId = idem.recordId;
+    }
+
+    const booking = await bookingService.createBooking(session!.user._id, parsed.data);
+    if (idempotencyRecordId) {
+      await idempotencyService.completeRequest(idempotencyRecordId, booking, 201);
+    }
+    return successResponse(booking, "Booking created successfully", 201);
+  } catch (err) {
+    if (idempotencyRecordId) {
+      await idempotencyService.failRequest(
+        idempotencyRecordId,
+        err instanceof Error ? err.message : "Unknown error"
+      );
+    }
+    if (err instanceof Error) {
+      return errorResponse(err.message);
+    }
+    return serverErrorResponse(err);
+  }
+}

@@ -24,7 +24,7 @@ This repository is intentionally transparent about what is complete vs planned.
 - Admin dashboards for bookings, payments, users, and timeslots
 
 ## What Is In Progress
-- LIFF student experience and LINE identity flow
+- LIFF student experience polish and final credential wiring
 - LINE Official Account bot + rich menu entry points
 - Manual PromptPay proof submission and approval UX hardening
 - Reminder scheduling and delivery retries
@@ -75,13 +75,30 @@ GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 NEXTAUTH_SECRET=
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_LINE_LIFF_ID=
+LINE_LIFF_CHANNEL_ID=
+LINE_CHANNEL_SECRET=
+LINE_CHANNEL_ACCESS_TOKEN=
+LINE_RICH_MENU_ID=
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=
 SMTP_PASS=
 SMTP_FROM=noreply@auvan.com
 SEAT_LOCK_TIMEOUT_MS=300000
+REMINDER_WORKER_SECRET=
+REMINDER_MAX_ATTEMPTS=5
+REMINDER_SCHEDULE_MODE=daily_batch
+REMINDER_BATCH_HOUR_UTC=1
+CRON_SECRET=
 ```
+Notes:
+- `NEXT_PUBLIC_LINE_LIFF_ID`: LIFF ID used by the web client SDK.
+- `LINE_LIFF_CHANNEL_ID`: channel ID used for server-side LINE ID token verification.
+- `REMINDER_SCHEDULE_MODE=daily_batch`: queue one reminder per booking for daily cron processing.
+- `REMINDER_BATCH_HOUR_UTC`: UTC hour used in daily-batch mode (e.g. `1` = 08:00 Bangkok).
+- `CRON_SECRET`: bearer token used by Vercel cron when calling `/api/internal/reminders/run`.
+
 
 ### 3) Run
 ```bash
