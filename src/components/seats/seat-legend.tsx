@@ -1,18 +1,18 @@
 "use client";
 
 const items = [
-  { color: "bg-[#f5f7ff] border-[#d9ddf3]", label: "Available" },
-  { color: "bg-[#4f62d3] border-[#4f62d3]", label: "Selected" },
-  { color: "bg-[#fff6e0] border-[#f4cf77]", label: "Locked" },
-  { color: "bg-[#e9ecf7] border-[#d8ddf0]", label: "Booked" },
+  { color: "bg-[#f4f7ff] border-[#ccd5fb]", label: "Available" },
+  { color: "bg-[#3f53c9] border-[#3145b8]", label: "Selected" },
+  { color: "bg-[#fff3dc] border-[#f2cc75]", label: "Locked" },
+  { color: "bg-[#e6ebff] border-[#cdd5f8]", label: "Booked" },
 ];
 
 export function SeatLegend() {
   return (
-    <div className="flex flex-wrap items-center justify-center gap-4 text-[10px] text-[#6f7cb6]">
+    <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] text-[#5f6eb2]">
       {items.map((item) => (
         <div key={item.label} className="flex items-center gap-1.5">
-          <div className={`h-3.5 w-3.5 rounded-sm border ${item.color}`} />
+          <div className={`h-4 w-4 rounded border ${item.color}`} />
           <span>{item.label}</span>
         </div>
       ))}

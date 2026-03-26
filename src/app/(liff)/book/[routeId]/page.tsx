@@ -226,25 +226,41 @@ export default function BookPage() {
             <MapPin className="h-3.5 w-3.5" />
             {route.from} - {route.to}
           </p>
-          <p className="inline-flex items-center gap-1.5">
-            <CalendarDays className="h-3.5 w-3.5" />
-            {selectedDate}
-          </p>
+          <div className="pt-1">
+            <label className="mb-1 block text-[10px] font-semibold uppercase text-[#7682bb]">Date</label>
+            <div className="relative">
+              <Input
+                type="date"
+                value={selectedDate}
+                min={new Date().toISOString().split("T")[0]}
+                onChange={(event) => {
+                  void releaseLockedSeats();
+                  setSelectedDate(event.target.value);
+                  setSelectedSeats([]);
+                  setLocksApplied(false);
+                }}
+                className="h-8 border-[#d7dcf3] bg-white pr-8 text-xs text-[#26368f]"
+              />
+              <CalendarDays className="pointer-events-none absolute right-2 top-2 h-3.5 w-3.5 text-[#91a0dd]" />
+            </div>
+          </div>
           <p className="inline-flex items-center gap-1.5">
             <Clock3 className="h-3.5 w-3.5" />
             {selectedTimeslot?.time || "-"}
           </p>
         </div>
 
-        {timeslots.length > 0 && (
+        {timeslots.length > 0 ? (
           <div className="mt-2">
             <label className="mb-1 block text-[10px] font-semibold uppercase text-[#7682bb]">Time</label>
             <select
               value={selectedTimeslot?._id || ""}
               onChange={(event) => {
+                void releaseLockedSeats();
                 const next = timeslots.find((slot) => slot._id === event.target.value) || null;
                 setSelectedTimeslot(next);
                 setSelectedSeats([]);
+                setLocksApplied(false);
               }}
               className="h-8 w-full rounded-md border border-[#d7dcf3] bg-white px-2 text-xs text-[#26368f] focus:outline-none focus:ring-1 focus:ring-[#3f53c9]"
             >
@@ -258,6 +274,13 @@ export default function BookPage() {
               })}
             </select>
           </div>
+        ) : (
+          <div className="mt-2 rounded-lg border border-dashed border-[#d6dcf4] bg-[#f9faff] px-3 py-2">
+            <p className="text-[11px] font-semibold text-[#3041a1]">No departures on this date</p>
+            <p className="mt-0.5 text-[10px] text-[#6f7cb6]">
+              Select another date to see available timeslots.
+            </p>
+          </div>
         )}
       </div>
 
@@ -267,22 +290,35 @@ export default function BookPage() {
         </p>
       )}
 
-      {step === "seats" && selectedTimeslot && (
+      {step === "seats" && (
         <div className="mt-3 rounded-xl border border-[#d6dcf4] bg-white p-3">
-          <SeatMap
-            timeslotId={selectedTimeslot._id}
-            selectedSeats={selectedSeats}
-            onSelectionChange={setSelectedSeats}
-            maxSeats={4}
-          />
+          {selectedTimeslot ? (
+            <>
+              <SeatMap
+                timeslotId={selectedTimeslot._id}
+                selectedSeats={selectedSeats}
+                onSelectionChange={setSelectedSeats}
+                maxSeats={4}
+              />
 
-          <Button
-            className="mt-3 h-9 w-full bg-[#3f53c9] text-xs hover:bg-[#3447b4]"
-            disabled={selectedSeatCount === 0 || submitting}
-            onClick={lockSeatsAndContinue}
-          >
-            {submitting ? "Locking seats..." : `Continue (${selectedSeatCount} seat${selectedSeatCount === 1 ? "" : "s"})`}
-          </Button>
+              <Button
+                className="mt-3 h-10 w-full bg-[#3f53c9] text-sm font-semibold hover:bg-[#3447b4]"
+                disabled={selectedSeatCount === 0 || submitting}
+                onClick={lockSeatsAndContinue}
+              >
+                {submitting
+                  ? "Locking seats..."
+                  : `Continue (${selectedSeatCount} seat${selectedSeatCount === 1 ? "" : "s"})`}
+              </Button>
+            </>
+          ) : (
+            <div className="rounded-lg border border-dashed border-[#d6dcf4] bg-[#f9faff] px-4 py-5 text-center">
+              <p className="text-sm font-semibold text-[#3041a1]">Seat map unavailable</p>
+              <p className="mt-1 text-xs text-[#6f7cb6]">
+                Choose a date/time with departures to view seats.
+              </p>
+            </div>
+          )}
         </div>
       )}
 

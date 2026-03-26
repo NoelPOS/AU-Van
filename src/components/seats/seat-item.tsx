@@ -15,25 +15,27 @@ export function SeatItem({ seat, isSelected, onClick, disabled }: SeatItemProps)
   const isAvailable = seat.status === "available";
 
   let className =
-    "flex h-9 w-9 items-center justify-center rounded-md text-[10px] font-semibold transition-all cursor-pointer border ";
+    "flex h-11 w-11 items-center justify-center rounded-lg text-xs font-semibold transition-all border ";
 
   if (isBooked) {
-    className += "bg-[#e9ecf7] border-[#d8ddf0] text-[#a4acd0] cursor-not-allowed";
+    className += "bg-[#e6ebff] border-[#cdd5f8] text-[#7f8ec9] cursor-not-allowed";
   } else if (isSelected) {
-    className += "bg-[#4f62d3] border-[#4f62d3] text-white shadow-sm";
+    className += "bg-[#3f53c9] border-[#3145b8] text-white shadow-md ring-2 ring-[#cfd8ff]";
   } else if (isLocked) {
-    className += "bg-[#fff6e0] border-[#f4cf77] text-[#bf8d12] cursor-not-allowed";
+    className += "bg-[#fff3dc] border-[#f2cc75] text-[#ac7d0c] cursor-not-allowed";
   } else if (isAvailable && !disabled) {
-    className += "bg-[#f5f7ff] border-[#d9ddf3] text-[#4f62d3] hover:bg-[#ebefff]";
+    className += "bg-[#f4f7ff] border-[#ccd5fb] text-[#3145b8] hover:bg-[#eaf0ff] active:scale-[0.98] cursor-pointer";
   } else {
-    className += "bg-[#eceff8] border-[#dde2f2] text-[#a3abd1] cursor-not-allowed";
+    className += "bg-[#eceff8] border-[#dde2f2] text-[#9ba5cd] cursor-not-allowed";
   }
 
   return (
     <button
+      type="button"
       onClick={onClick}
       disabled={disabled || isBooked || isLocked}
       className={className}
+      aria-label={`Seat ${seat.label} (${seat.status})`}
       title={`Seat ${seat.label} - ${seat.status}`}
     >
       {seat.label}
