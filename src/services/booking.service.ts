@@ -1,4 +1,4 @@
-import { connectDB } from "@/libs/mongodb";
+import mongoose from "mongoose";
 import Booking from "@/models/Booking";
 import Payment from "@/models/Payment";
 import Route from "@/models/Route";
@@ -48,7 +48,6 @@ class BookingService {
   }
 
   async createBooking(userId: string, input: CreateBookingInput) {
-    await connectDB();
 
     const route = await Route.findById(input.routeId);
     if (!route || route.status !== "active") {
@@ -104,7 +103,7 @@ class BookingService {
       paidAt: undefined,
     });
 
-    booking.paymentId = payment._id as any;
+    booking.paymentId = new mongoose.Types.ObjectId(String(payment._id));
     await booking.save();
 
     await eventBus.emit(Events.BOOKING_CREATED, {
@@ -129,7 +128,6 @@ class BookingService {
     userId: string,
     input: SubmitPaymentProofInput
   ) {
-    await connectDB();
 
     const booking = await Booking.findOne({ _id: bookingId, userId });
     if (!booking) throw new Error("Booking not found");
@@ -177,7 +175,6 @@ class BookingService {
       seatIds: string[];
     }
   ) {
-    await connectDB();
 
     const booking = await Booking.findOne({ _id: bookingId, userId });
     if (!booking) throw new Error("Booking not found");
@@ -208,9 +205,9 @@ class BookingService {
     await seatService.freeSeats(booking.seatIds.map(String));
 
     booking.rescheduledFromBookingId =
-      (booking.rescheduledFromBookingId || (booking._id as any)) as any;
-    booking.timeslotId = nextTimeslot._id as any;
-    booking.seatIds = input.seatIds as any;
+      booking.rescheduledFromBookingId || new mongoose.Types.ObjectId(String(booking._id));
+    booking.timeslotId = new mongoose.Types.ObjectId(String(nextTimeslot._id));
+    booking.seatIds = input.seatIds.map(id => new mongoose.Types.ObjectId(id));
     booking.passengers = input.seatIds.length;
     booking.status = "reschedule_requested";
     await booking.save();
@@ -225,7 +222,6 @@ class BookingService {
   }
 
   async getUserBookings(userId: string) {
-    await connectDB();
     return Booking.find({ userId })
       .populate("routeId", "from to slug price")
       .populate("timeslotId", "date time")
@@ -239,7 +235,6 @@ class BookingService {
   }
 
   async getBookingById(bookingId: string, userId?: string) {
-    await connectDB();
     const query: Record<string, string> = { _id: bookingId };
     if (userId) query.userId = userId;
 
@@ -260,7 +255,6 @@ class BookingService {
     userId: string,
     updates: { passengerName?: string; passengerPhone?: string; pickupLocation?: string }
   ) {
-    await connectDB();
 
     const booking = await Booking.findOne({ _id: bookingId, userId });
     if (!booking) throw new Error("Booking not found");
@@ -281,7 +275,6 @@ class BookingService {
   }
 
   async cancelBooking(bookingId: string, userId: string, isAdmin = false) {
-    await connectDB();
 
     const query: Record<string, string> = { _id: bookingId };
     if (!isAdmin) query.userId = userId;
@@ -324,7 +317,6 @@ class BookingService {
     page?: number;
     limit?: number;
   }) {
-    await connectDB();
 
     const query: Record<string, unknown> = {};
     if (filters?.status) query.status = filters.status;
@@ -366,7 +358,6 @@ class BookingService {
   }
 
   async getDashboardStats() {
-    await connectDB();
 
     const today = new Date();
     const startOfDay = new Date(

@@ -10,6 +10,13 @@ export interface NotificationPayload {
   lineUserId?: string;
 }
 
+export interface NotificationResult {
+  success: boolean;
+  channel: "email" | "inapp" | "line_push";
+  deliveryStatus: "sent" | "failed" | "skipped";
+  externalMessageId?: string;
+}
+
 export interface NotificationStrategy {
-  send(payload: NotificationPayload): Promise<boolean>;
+  send(payload: NotificationPayload): Promise<NotificationResult>;
 }

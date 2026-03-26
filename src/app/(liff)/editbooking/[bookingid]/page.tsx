@@ -7,39 +7,40 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CalendarDays, Clock3, MapPin } from "lucide-react";
 import { SeatMap } from "@/components/seats/seat-map";
-
-interface BookingData {
-  _id: string;
-  passengerName: string;
-  passengerPhone: string;
-  pickupLocation: string;
-  status: string;
-  routeId?: { _id: string; from: string; to: string };
-  timeslotId?: { _id: string; date: string; time: string };
-  seatIds?: { _id?: string; label: string }[];
-}
-
-interface TimeslotOption {
-  _id: string;
-  date: string;
-  time: string;
-  totalSeats: number;
-  bookedSeats: number;
-}
+import { LiffPageLoading } from "@/components/shared/loading";
+import { LiffPageHeader } from "@/components/layout/liff-page-header";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  useBooking,
+  useUpdateBooking,
+  useRescheduleBooking,
+  useCancelBooking,
+  useTimeslots,
+} from "@/hooks/queries";
 
 export default function EditBookingPage() {
   const { bookingid } = useParams<{ bookingid: string }>();
   const router = useRouter();
-  const [booking, setBooking] = useState<BookingData | null>(null);
-  const [timeslots, setTimeslots] = useState<TimeslotOption[]>([]);
-  const [rescheduleDate, setRescheduleDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+
+  const { data: booking, isLoading } = useBooking(bookingid);
+  const updateBooking = useUpdateBooking();
+  const rescheduleBooking = useRescheduleBooking();
+  const cancelBooking = useCancelBooking();
+
+  const routeData = booking?.routeId as { _id: string; from: string; to: string } | undefined;
+  const timeslotData = booking?.timeslotId as { _id: string; date: string; time: string } | undefined;
+  const seatData = booking?.seatIds as { _id?: string; label: string }[] | undefined;
+
+  const [rescheduleDate, setRescheduleDate] = useState(new Date().toISOString().split("T")[0]);
   const [targetTimeslotId, setTargetTimeslotId] = useState("");
   const [targetSeatIds, setTargetSeatIds] = useState<string[]>([]);
   const [rescheduleMode, setRescheduleMode] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [form, setForm] = useState({
@@ -47,78 +48,60 @@ export default function EditBookingPage() {
     pickupLocation: "",
     passengerPhone: "",
   });
+  const [initialized, setInitialized] = useState(false);
+
   const isCancelled = booking?.status === "cancelled";
-  const seatCount = useMemo(() => booking?.seatIds?.length || 1, [booking?.seatIds]);
+  const seatCount = useMemo(() => seatData?.length || 1, [seatData]);
 
+  // Initialize form when booking loads
+  if (booking && !initialized) {
+    setForm({
+      passengerName: booking.passengerName || "",
+      pickupLocation: booking.pickupLocation || "",
+      passengerPhone: booking.passengerPhone || "",
+    });
+    setRescheduleDate(timeslotData?.date || new Date().toISOString().split("T")[0]);
+    setInitialized(true);
+  }
+
+  // Load timeslots for reschedule
+  const { data: timeslots = [] } = useTimeslots(
+    rescheduleMode && routeData?._id ? routeData._id : "",
+    rescheduleDate
+  );
+
+  // Auto-select timeslot when timeslots load in reschedule mode
   useEffect(() => {
-    fetch(`/api/liff/bookings/${bookingid}`)
-      .then((response) => response.json())
-      .then((json) => {
-        if (!json.success || !json.data) {
-          setError("Booking not found");
-          return;
-        }
-        const data: BookingData = json.data;
-        setBooking(data);
-        setRescheduleDate(data.timeslotId?.date || new Date().toISOString().split("T")[0]);
-        setForm({
-          passengerName: data.passengerName || "",
-          pickupLocation: data.pickupLocation || "",
-          passengerPhone: data.passengerPhone || "",
-        });
-      })
-      .catch(() => setError("Failed to load booking"))
-      .finally(() => setLoading(false));
-  }, [bookingid]);
+    if (!rescheduleMode || timeslots.length === 0) return;
+    const preferred =
+      timeslots.find((slot) => slot._id !== timeslotData?._id)?._id ||
+      timeslots[0]?._id ||
+      "";
+    setTargetTimeslotId(preferred);
+    setTargetSeatIds([]);
+  }, [timeslots, rescheduleMode, timeslotData?._id]);
 
-  useEffect(() => {
-    if (!rescheduleMode || !booking?.routeId?._id) return;
+  const saving = updateBooking.isPending || rescheduleBooking.isPending || cancelBooking.isPending;
 
-    fetch(`/api/liff/timeslots?routeId=${booking.routeId._id}&date=${rescheduleDate}`)
-      .then((response) => response.json())
-      .then((json) => {
-        if (!json.success) {
-          setTimeslots([]);
-          setTargetTimeslotId("");
-          return;
-        }
-        const list: TimeslotOption[] = json.data || [];
-        setTimeslots(list);
-        const preferred =
-          list.find((slot) => slot._id !== booking.timeslotId?._id)?._id ||
-          list[0]?._id ||
-          "";
-        setTargetTimeslotId(preferred);
-        setTargetSeatIds([]);
-      })
-      .catch(() => {
-        setTimeslots([]);
-        setTargetTimeslotId("");
-      });
-  }, [booking?.routeId?._id, booking?.timeslotId?._id, rescheduleDate, rescheduleMode]);
+  const showMsg = (type: "success" | "error", text: string) => {
+    if (type === "success") {
+      setMessage(text);
+      setError("");
+    } else {
+      setError(text);
+      setMessage("");
+    }
+  };
 
   const handleSaveDetails = async () => {
     if (!booking) return;
-    setSaving(true);
     setError("");
     setMessage("");
-
     try {
-      const response = await fetch(`/api/liff/bookings/${booking._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      const json = await response.json();
-      if (!json.success) {
-        setError(json.error || "Failed to update booking details");
-        return;
-      }
-      setMessage("Passenger details updated.");
-    } catch {
-      setError("Failed to update booking details");
-    } finally {
-      setSaving(false);
+      await updateBooking.mutateAsync({ id: booking._id, ...form });
+      showMsg("success", "Passenger details updated.");
+    } catch (err) {
+      showMsg("error", err instanceof Error ? err.message : "Failed to update booking details");
     }
   };
 
@@ -129,67 +112,43 @@ export default function EditBookingPage() {
       return;
     }
     if (!targetTimeslotId) {
-      setError("Please choose a new timeslot.");
+      showMsg("error", "Please choose a new timeslot.");
       return;
     }
     if (targetSeatIds.length !== seatCount) {
-      setError(`Please choose exactly ${seatCount} seat${seatCount > 1 ? "s" : ""}.`);
+      showMsg("error", `Please choose exactly ${seatCount} seat${seatCount > 1 ? "s" : ""}.`);
       return;
     }
-
-    setSaving(true);
     setError("");
     setMessage("");
-
     try {
-      const response = await fetch(`/api/liff/bookings/${booking._id}/reschedule`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          timeslotId: targetTimeslotId,
-          seatIds: targetSeatIds,
-        }),
+      await rescheduleBooking.mutateAsync({
+        id: booking._id,
+        timeslotId: targetTimeslotId,
+        seatIds: targetSeatIds,
       });
-      const json = await response.json();
-      if (!json.success) {
-        setError(json.error || "Failed to reschedule booking");
-        return;
-      }
-      setMessage("Reschedule request submitted.");
+      showMsg("success", "Reschedule request submitted.");
       setTimeout(() => router.push("/mybookings"), 1200);
-    } catch {
-      setError("Failed to reschedule booking");
-    } finally {
-      setSaving(false);
+    } catch (err) {
+      showMsg("error", err instanceof Error ? err.message : "Failed to reschedule booking");
     }
   };
 
   const handleCancelBooking = async () => {
     if (!booking) return;
-    setSaving(true);
     setError("");
     setMessage("");
-
     try {
-      const response = await fetch(`/api/liff/bookings/${booking._id}`, {
-        method: "DELETE",
-      });
-      const json = await response.json();
-      if (!json.success) {
-        setError(json.error || "Failed to cancel booking");
-        return;
-      }
-      setMessage("Booking cancelled.");
+      await cancelBooking.mutateAsync(booking._id);
+      showMsg("success", "Booking cancelled.");
       setTimeout(() => router.push("/mybookings"), 900);
-    } catch {
-      setError("Failed to cancel booking");
-    } finally {
-      setSaving(false);
+    } catch (err) {
+      showMsg("error", err instanceof Error ? err.message : "Failed to cancel booking");
     }
   };
 
-  if (loading) {
-    return <p className="px-4 py-8 text-center text-xs text-[#6e7ab4]">Loading booking details...</p>;
+  if (isLoading) {
+    return <LiffPageLoading title="Loading booking details" subtitle="Preparing your current trip info..." />;
   }
 
   if (!booking) {
@@ -204,9 +163,14 @@ export default function EditBookingPage() {
 
   return (
     <div className="px-4 pb-6 pt-3">
-      <h1 className="text-sm font-semibold text-[#1f2f8d]">Reschedule Booking</h1>
+      <LiffPageHeader
+        title="Edit Booking"
+        subtitle="Update passenger details and reschedule seats"
+        showBack
+        backHref="/mybookings"
+      />
 
-      <div className="mt-3 space-y-3 rounded-xl border border-[#d6dcf4] bg-white p-3">
+      <div className="space-y-3 rounded-xl border border-[#d6dcf4] bg-white p-3">
         <div>
           <Label className="mb-1 block text-[10px] font-semibold uppercase text-[#7682bb]">Name</Label>
           <Input
@@ -241,18 +205,18 @@ export default function EditBookingPage() {
           <p className="text-[10px] font-semibold uppercase text-[#6f7cb6]">Booking Details</p>
           <p className="mt-1 inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#3041a1]">
             <MapPin className="h-3.5 w-3.5" />
-            {booking.routeId ? `${booking.routeId.from} - ${booking.routeId.to}` : "-"}
+            {routeData ? `${routeData.from} - ${routeData.to}` : "-"}
           </p>
           <p className="mt-0.5 inline-flex items-center gap-1.5 text-[10px] text-[#6f7cb6]">
             <CalendarDays className="h-3.5 w-3.5" />
-            {booking.timeslotId?.date || "-"}
+            {timeslotData?.date || "-"}
           </p>
           <p className="mt-0.5 inline-flex items-center gap-1.5 text-[10px] text-[#6f7cb6]">
             <Clock3 className="h-3.5 w-3.5" />
-            {booking.timeslotId?.time || "-"}
+            {timeslotData?.time || "-"}
           </p>
           <p className="mt-0.5 text-[10px] text-[#6f7cb6]">
-            {booking.seatIds?.map((seat) => seat.label).join(", ") || "-"}
+            {seatData?.map((seat) => seat.label).join(", ") || "-"}
           </p>
         </div>
 
@@ -284,21 +248,24 @@ export default function EditBookingPage() {
               <Label className="mb-1 block text-[10px] font-semibold uppercase text-[#7682bb]">
                 New Timeslot
               </Label>
-              <select
-                value={targetTimeslotId}
-                onChange={(event) => {
-                  setTargetTimeslotId(event.target.value);
+              <Select
+                value={targetTimeslotId || undefined}
+                onValueChange={(value) => {
+                  setTargetTimeslotId(value);
                   setTargetSeatIds([]);
                 }}
-                className="h-8 w-full rounded-md border border-[#d7dcf3] bg-white px-2 text-xs text-[#26368f] focus:outline-none focus:ring-1 focus:ring-[#3f53c9]"
               >
-                <option value="">Select timeslot</option>
-                {timeslots.map((slot) => (
-                  <option key={slot._id} value={slot._id}>
-                    {slot.time} ({slot.totalSeats - slot.bookedSeats} left)
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-8 border-[#d7dcf3] text-xs text-[#26368f]">
+                  <SelectValue placeholder="Select timeslot" />
+                </SelectTrigger>
+                <SelectContent>
+                  {timeslots.map((slot) => (
+                    <SelectItem key={slot._id} value={slot._id}>
+                      {slot.time} ({slot.totalSeats - slot.bookedSeats} left)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {targetTimeslotId && (

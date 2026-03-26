@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,56 +17,34 @@ import {
 import { PageLoading } from "@/components/shared/loading";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Plus, Trash2, X } from "lucide-react";
-import type { IRoute } from "@/types";
+import { useRoutes, useCreateRoute, useDeleteRoute } from "@/hooks/queries";
 
 export default function AdminRoutesPage() {
-  const [routes, setRoutes] = useState<IRoute[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [error, setError] = useState("");
-
   const [form, setForm] = useState({ from: "", to: "", price: 0, duration: 0 });
 
-  const fetchRoutes = () => {
-    setLoading(true);
-    fetch("/api/admin/routes")
-      .then((r) => r.json())
-      .then((json) => { if (json.success) setRoutes(json.data); })
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => { fetchRoutes(); }, []);
+  const { data: routes = [], isLoading } = useRoutes();
+  const createRoute = useCreateRoute();
+  const deleteRoute = useDeleteRoute();
 
   const handleCreate = async () => {
-    setCreating(true);
-    setError("");
-    const res = await fetch("/api/admin/routes", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: form.from, to: form.to,
+    try {
+      await createRoute.mutateAsync({
+        from: form.from,
+        to: form.to,
         price: Number(form.price),
         duration: Number(form.duration) || undefined,
-      }),
-    });
-    const json = await res.json();
-    setCreating(false);
-    if (json.success) {
+      });
       setShowForm(false);
       setForm({ from: "", to: "", price: 0, duration: 0 });
-      fetchRoutes();
-    } else {
-      setError(json.error || "Failed to create route");
+    } catch {
+      // error available via createRoute.error
     }
   };
 
-  const handleDelete = async (id: string) => {
-    await fetch(`/api/admin/routes/${id}`, { method: "DELETE" });
-    fetchRoutes();
-  };
+  if (isLoading) return <PageLoading />;
 
-  if (loading) return <PageLoading />;
+  const error = createRoute.error?.message || "";
 
   return (
     <div className="min-h-[calc(100vh-3.5rem)] bg-background">
@@ -107,8 +85,8 @@ export default function AdminRoutesPage() {
               </div>
               {error && <p className="sm:col-span-2 text-sm text-destructive">{error}</p>}
               <div className="sm:col-span-2">
-                <Button onClick={handleCreate} disabled={creating || !form.from || !form.to}
-                  className="w-full rounded-xl">{creating ? "Creating..." : "Create Route"}</Button>
+                <Button onClick={handleCreate} disabled={createRoute.isPending || !form.from || !form.to}
+                  className="w-full rounded-xl">{createRoute.isPending ? "Creating..." : "Create Route"}</Button>
               </div>
             </CardContent>
           </Card>
@@ -155,7 +133,7 @@ export default function AdminRoutesPage() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Keep</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(r._id)}>Deactivate</AlertDialogAction>
+                              <AlertDialogAction onClick={() => deleteRoute.mutate(r._id)}>Deactivate</AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>

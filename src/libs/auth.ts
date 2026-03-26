@@ -157,9 +157,9 @@ export const authOptions: NextAuthOptions = {
             pictureUrl: user.image,
             isAdmin: false,
           });
-          (user as any)._id = String(newUser._id);
-          (user as any).isAdmin = false;
-          (user as any).phone = "";
+          user._id = String(newUser._id);
+          user.isAdmin = false;
+          user.phone = "";
         } else {
           if (existingUser.authProvider === "local") {
             existingUser.authProvider = "google";
@@ -167,18 +167,18 @@ export const authOptions: NextAuthOptions = {
             existingUser.pictureUrl = existingUser.pictureUrl || existingUser.image;
             await existingUser.save();
           }
-          (user as any)._id = String(existingUser._id);
-          (user as any).isAdmin = existingUser.isAdmin;
-          (user as any).phone = existingUser.phone;
+          user._id = String(existingUser._id);
+          user.isAdmin = existingUser.isAdmin;
+          user.phone = existingUser.phone;
         }
       }
       return true;
     },
     async jwt({ token, user, trigger, session }) {
       if (user) {
-        token._id = (user as any)._id || user.id;
-        token.phone = (user as any).phone;
-        token.isAdmin = (user as any).isAdmin || false;
+        token._id = user._id || user.id;
+        token.phone = user.phone;
+        token.isAdmin = user.isAdmin || false;
       }
       if (trigger === "update" && session) {
         if (session.name) token.name = session.name;

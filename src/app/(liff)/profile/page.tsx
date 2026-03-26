@@ -1,48 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { AlertCircle, CheckCircle2, Lock, ShieldCheck, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LiffPageLoading } from "@/components/shared/loading";
-
-type ProfileData = {
-  name?: string;
-  phone?: string;
-  email?: string;
-  authProvider?: "local" | "google" | "line";
-  lineLinkedAt?: string;
-};
+import { LiffPageHeader } from "@/components/layout/liff-page-header";
+import { useMe, useUpdateProfile } from "@/hooks/queries";
 
 export default function ProfilePage() {
-  const { data: session, update } = useSession();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState({ type: "", text: "" });
+  const { update } = useSession();
+  const { data: userData, isLoading } = useMe();
+  const updateProfile = useUpdateProfile();
 
-  const [userData, setUserData] = useState<ProfileData>({});
   const [profile, setProfile] = useState({ name: "", phone: "" });
   const [passwords, setPasswords] = useState({ oldPassword: "", newPassword: "" });
+  const [msg, setMsg] = useState({ type: "", text: "" });
+  const [initialized, setInitialized] = useState(false);
 
-  useEffect(() => {
-    if (!session?.user) return;
-
-    fetch("/api/users/me")
-      .then((r) => r.json())
-      .then((json) => {
-        if (json.success && json.data) {
-          const data = json.data as ProfileData;
-          setUserData(data);
-          setProfile({
-            name: data.name || "",
-            phone: data.phone || "",
-          });
-        }
-      })
-      .finally(() => setLoading(false));
-  }, [session]);
+  // Initialize form when data loads
+  if (userData && !initialized) {
+    setProfile({ name: userData.name || "", phone: userData.phone || "" });
+    setInitialized(true);
+  }
 
   const showMsg = (type: string, text: string) => {
     setMsg({ type, text });
@@ -50,53 +32,39 @@ export default function ProfilePage() {
   };
 
   const handleProfileUpdate = async () => {
-    setSaving(true);
-    const res = await fetch("/api/users/me", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(profile),
-    });
-    const json = await res.json();
-    setSaving(false);
-
-    if (json.success) {
+    try {
+      await updateProfile.mutateAsync(profile);
       showMsg("success", "Profile updated");
       update({ name: profile.name, phone: profile.phone });
-      setUserData((prev) => ({ ...prev, name: profile.name, phone: profile.phone }));
-    } else {
-      showMsg("error", json.error || "Update failed");
+    } catch (err) {
+      showMsg("error", err instanceof Error ? err.message : "Update failed");
     }
   };
 
   const handlePasswordChange = async () => {
-    setSaving(true);
-    const res = await fetch("/api/users/me", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(passwords),
-    });
-    const json = await res.json();
-    setSaving(false);
-
-    if (json.success) {
+    try {
+      await updateProfile.mutateAsync(passwords);
       showMsg("success", "Password updated");
       setPasswords({ oldPassword: "", newPassword: "" });
-    } else {
-      showMsg("error", json.error || "Password update failed");
+    } catch (err) {
+      showMsg("error", err instanceof Error ? err.message : "Password update failed");
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return <LiffPageLoading title="Loading profile" subtitle="Getting your account details..." />;
   }
 
-  const provider = userData.authProvider || "local";
+  const provider = userData?.authProvider || "local";
   const canChangePassword = provider === "local";
-  const email = userData.email || session?.user?.email || "";
+  const email = userData?.email || "";
   const initials = (profile.name || email || "U").charAt(0).toUpperCase();
+  const saving = updateProfile.isPending;
 
   return (
     <div className="px-4 pb-6 pt-3">
+      <LiffPageHeader title="Profile" subtitle="Manage your account and sign-in settings" />
+
       <section className="rounded-2xl bg-gradient-to-br from-[#4259ce] to-[#2f45b6] px-4 py-4 text-white shadow-[0_16px_30px_rgba(31,47,141,0.25)]">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 text-base font-semibold">

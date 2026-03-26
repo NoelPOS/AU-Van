@@ -1,4 +1,3 @@
-import { connectDB } from "@/libs/mongodb";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
 import type { UpdateProfileInput, ChangePasswordInput } from "@/validators/auth.validator";
@@ -15,24 +14,24 @@ class UserService {
   }
 
   async getUserById(id: string) {
-    await connectDB();
+
     return User.findById(id).select("-password").lean();
   }
 
   async getUserByEmail(email: string) {
-    await connectDB();
+
     return User.findOne({ email: email.toLowerCase() }).lean();
   }
 
   async updateProfile(userId: string, updates: UpdateProfileInput) {
-    await connectDB();
+
     return User.findByIdAndUpdate(userId, updates, { new: true, runValidators: true })
       .select("-password")
       .lean();
   }
 
   async changePassword(userId: string, input: ChangePasswordInput) {
-    await connectDB();
+
     const user = await User.findById(userId);
     if (!user) throw new Error("User not found");
 
@@ -45,14 +44,14 @@ class UserService {
   }
 
   async deleteAccount(userId: string) {
-    await connectDB();
+
     const result = await User.findByIdAndDelete(userId);
     if (!result) throw new Error("User not found");
     return true;
   }
 
   async getAllUsers(page = 1, limit = 20) {
-    await connectDB();
+
     const [users, total] = await Promise.all([
       User.find().select("-password").sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
       User.countDocuments(),
@@ -61,7 +60,7 @@ class UserService {
   }
 
   async toggleAdmin(userId: string) {
-    await connectDB();
+
     const user = await User.findById(userId);
     if (!user) throw new Error("User not found");
     user.isAdmin = !user.isAdmin;

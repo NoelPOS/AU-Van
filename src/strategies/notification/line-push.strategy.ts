@@ -1,11 +1,11 @@
-import { connectDB } from "@/libs/mongodb";
-import Notification from "@/models/Notification";
 import { sendLinePushMessage } from "@/lib/line-messaging";
-import type { NotificationStrategy, NotificationPayload } from "./notification.strategy";
+import type { NotificationStrategy, NotificationPayload, NotificationResult } from "./notification.strategy";
 
 export class LinePushNotificationStrategy implements NotificationStrategy {
-  async send(payload: NotificationPayload): Promise<boolean> {
-    if (!payload.lineUserId) return false;
+  async send(payload: NotificationPayload): Promise<NotificationResult> {
+    if (!payload.lineUserId) {
+      return { success: false, channel: "line_push", deliveryStatus: "skipped" };
+    }
 
     const result = await sendLinePushMessage(payload.lineUserId, [
       {
@@ -14,19 +14,11 @@ export class LinePushNotificationStrategy implements NotificationStrategy {
       },
     ]);
 
-    await connectDB();
-    await Notification.create({
-      userId: payload.userId,
-      type: payload.type,
-      title: payload.title,
-      message: payload.message,
-      data: payload.data,
-      read: false,
+    return {
+      success: result.ok,
       channel: "line_push",
       deliveryStatus: result.ok ? "sent" : "failed",
       externalMessageId: result.requestId || undefined,
-    });
-
-    return result.ok;
+    };
   }
 }

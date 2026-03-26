@@ -1,4 +1,3 @@
-import { connectDB } from "@/libs/mongodb";
 import AuditLog from "@/models/AuditLog";
 
 interface CreateAuditLogInput {
@@ -24,7 +23,6 @@ class AuditLogService {
   }
 
   async create(input: CreateAuditLogInput) {
-    await connectDB();
     return AuditLog.create(input);
   }
 }

@@ -1,4 +1,3 @@
-import { connectDB } from "@/libs/mongodb";
 import Seat from "@/models/Seat";
 import Timeslot from "@/models/Timeslot";
 import { sseManager } from "@/lib/sse";
@@ -25,7 +24,7 @@ class SeatService {
   }
 
   async createSeatsForTimeslot(timeslotId: string, totalSeats: number) {
-    await connectDB();
+
 
     const seats = Array.from({ length: totalSeats }, (_, i) => ({
       timeslotId,
@@ -38,7 +37,7 @@ class SeatService {
   }
 
   async getSeatsForTimeslot(timeslotId: string) {
-    await connectDB();
+
     // Release expired locks first
     await this.releaseExpiredLocks();
 
@@ -49,7 +48,7 @@ class SeatService {
   }
 
   async lockSeats(timeslotId: string, seatIds: string[], userId: string) {
-    await connectDB();
+
     await this.releaseExpiredLocks();
 
     // Verify all seats are available
@@ -88,7 +87,7 @@ class SeatService {
   }
 
   async releaseSeats(seatIds: string[], userId: string) {
-    await connectDB();
+
 
     await Seat.updateMany(
       { _id: { $in: seatIds }, lockedBy: userId, status: "locked" },
@@ -102,7 +101,7 @@ class SeatService {
   }
 
   async confirmSeats(seatIds: string[], userId: string) {
-    await connectDB();
+
 
     const result = await Seat.updateMany(
       { _id: { $in: seatIds }, lockedBy: userId, status: "locked" },
@@ -134,7 +133,7 @@ class SeatService {
   }
 
   async freeSeats(seatIds: string[]) {
-    await connectDB();
+
 
     if (seatIds.length === 0) return;
 

@@ -4,10 +4,18 @@ import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { addDays, format } from "date-fns";
-import { CalendarDays, ChevronDown, Ticket } from "lucide-react";
+import { CalendarDays, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LiffPageLoading } from "@/components/shared/loading";
+import { LiffPageHeader } from "@/components/layout/liff-page-header";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { IRoute, ITimeslot } from "@/types";
 
 export function RouteScheduleScreen() {
@@ -102,6 +110,11 @@ export function RouteScheduleScreen() {
 
   return (
     <div className="px-4 pb-6 pt-3">
+      <LiffPageHeader
+        title="Choose Your Destination"
+        subtitle="Pick route, date, and timeslot in one flow"
+      />
+
       <header className="rounded-2xl bg-gradient-to-br from-[#4259ce] to-[#2f45b6] px-4 py-4 text-white shadow-[0_16px_30px_rgba(31,47,141,0.25)]">
         <p className="text-[11px] uppercase tracking-wide text-white/70">AU Van Booking</p>
         <h1 className="mt-1 text-base font-semibold">Choose your trip</h1>
@@ -124,21 +137,23 @@ export function RouteScheduleScreen() {
           <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-[#7682bb]">
             To
           </label>
-          <div className="relative">
-            <select
-              value={selectedRouteId}
-              onChange={(event) => setSelectedRouteId(event.target.value)}
-              className="h-10 w-full appearance-none rounded-lg border border-[#d9def4] bg-white px-3 pr-8 text-xs text-[#22339a] focus:outline-none focus:ring-2 focus:ring-[#bac7ff]"
-            >
-              {routes.length === 0 && <option value="">No destination available</option>}
+          <Select value={selectedRouteId || undefined} onValueChange={setSelectedRouteId}>
+            <SelectTrigger className="h-10 border-[#d9def4] text-xs text-[#22339a]">
+              <SelectValue placeholder="Choose destination" />
+            </SelectTrigger>
+            <SelectContent>
+              {routes.length === 0 && (
+                <SelectItem value="none" disabled>
+                  No destination available
+                </SelectItem>
+              )}
               {routes.map((route) => (
-                <option key={route._id} value={route._id}>
+                <SelectItem key={route._id} value={route._id}>
                   {route.to}
-                </option>
+                </SelectItem>
               ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-2.5 top-3 h-4 w-4 text-[#7f8ac2]" />
-          </div>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="mt-3">
@@ -187,8 +202,8 @@ export function RouteScheduleScreen() {
 
         {loadingTimeslots && (
           <div className="space-y-2 py-2">
-            <div className="h-12 animate-pulse rounded-lg bg-[#f1f4ff]" />
-            <div className="h-12 animate-pulse rounded-lg bg-[#f1f4ff]" />
+            <div className="h-14 animate-pulse rounded-xl border border-[#dbe2fb] bg-[#f4f7ff]" />
+            <div className="h-14 animate-pulse rounded-xl border border-[#dbe2fb] bg-[#f4f7ff]" />
           </div>
         )}
 

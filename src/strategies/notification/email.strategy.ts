@@ -1,11 +1,13 @@
 import { emailService } from "@/lib/email";
-import type { NotificationStrategy, NotificationPayload } from "./notification.strategy";
+import type { NotificationStrategy, NotificationPayload, NotificationResult } from "./notification.strategy";
 
 export class EmailNotificationStrategy implements NotificationStrategy {
-  async send(payload: NotificationPayload): Promise<boolean> {
-    if (!payload.email) return false;
+  async send(payload: NotificationPayload): Promise<NotificationResult> {
+    if (!payload.email) {
+      return { success: false, channel: "email", deliveryStatus: "skipped" };
+    }
 
-    return emailService.send({
+    const sent = await emailService.send({
       to: payload.email,
       subject: payload.title,
       html: `
@@ -25,5 +27,11 @@ export class EmailNotificationStrategy implements NotificationStrategy {
         </div>
       `,
     });
+
+    return {
+      success: sent,
+      channel: "email",
+      deliveryStatus: sent ? "sent" : "failed",
+    };
   }
 }

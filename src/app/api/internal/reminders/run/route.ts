@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { connectDB } from "@/libs/mongodb";
 import { reminderService } from "@/services/reminder.service";
 import { successResponse, errorResponse, serverErrorResponse } from "@/lib/api-response";
 
@@ -16,6 +17,7 @@ function isAuthorized(req: NextRequest): boolean {
 }
 
 async function processReminderBatch(limit: number) {
+  await connectDB();
   const normalizedLimit = Number.isFinite(limit) && limit > 0 ? Math.min(limit, 500) : 20;
   const result = await reminderService.processDueReminders(normalizedLimit);
   return successResponse(result, "Reminder batch processed");

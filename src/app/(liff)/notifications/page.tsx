@@ -5,6 +5,7 @@ import { format, isToday, isYesterday } from "date-fns";
 import { Bell, Check, CheckCheck } from "lucide-react";
 import { useNotifications } from "@/context/notification.context";
 import { LiffPageLoading } from "@/components/shared/loading";
+import { LiffPageHeader } from "@/components/layout/liff-page-header";
 
 export default function NotificationsPage() {
   const { notifications, loading, markAsRead, markAllAsRead } = useNotifications();
@@ -28,17 +29,20 @@ export default function NotificationsPage() {
 
   return (
     <div className="px-4 pb-6 pt-3">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-sm font-semibold text-[#1f2f8d]">Notifications</h1>
-        <button
-          onClick={markAllAsRead}
-          className="rounded-md border border-[#ccd4f3] bg-white px-2 py-1 text-[11px] font-medium text-[#3f53c9]"
-        >
-          <span className="inline-flex items-center gap-1">
-            <CheckCheck className="h-3 w-3" /> Read all
-          </span>
-        </button>
-      </div>
+      <LiffPageHeader
+        title="Notifications"
+        subtitle="Updates for bookings and payments"
+        rightSlot={
+          <button
+            onClick={markAllAsRead}
+            className="rounded-md border border-[#ccd4f3] bg-white px-2 py-1 text-[11px] font-medium text-[#3f53c9]"
+          >
+            <span className="inline-flex items-center gap-1">
+              <CheckCheck className="h-3 w-3" /> Read all
+            </span>
+          </button>
+        }
+      />
 
       {loading && notifications.length === 0 && (
         <LiffPageLoading title="Loading notifications" subtitle="Checking your latest updates..." />

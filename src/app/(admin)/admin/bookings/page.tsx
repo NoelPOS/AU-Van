@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import {
 import { PageLoading } from "@/components/shared/loading";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Trash2, X } from "lucide-react";
+import { useAdminBookings, useAdminCancelBooking } from "@/hooks/queries";
 
 const statusStyles: Record<string, string> = {
   pending: "bg-amber-50 text-amber-700 border-amber-200",
@@ -25,36 +26,19 @@ const statusStyles: Record<string, string> = {
 };
 
 export default function AdminBookingsPage() {
-  const [bookings, setBookings] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchBookings = useCallback(async () => {
-    setLoading(true);
-    const params = new URLSearchParams({ all: "true", page: String(page), limit: "20" });
-    if (dateFilter) params.set("date", dateFilter);
-    if (statusFilter) params.set("status", statusFilter);
+  const { data, isLoading } = useAdminBookings({
+    all: true, page, limit: 20,
+    ...(dateFilter && { date: dateFilter }),
+    ...(statusFilter && { status: statusFilter }),
+  });
+  const cancelBooking = useAdminCancelBooking();
 
-    const res = await fetch(`/api/admin/bookings?${params}`);
-    const json = await res.json();
-    if (json.success) {
-      setBookings(json.data.bookings || []);
-      setTotalPages(json.data.totalPages || 1);
-    }
-    setLoading(false);
-  }, [dateFilter, page, statusFilter]);
-
-  useEffect(() => { fetchBookings(); }, [fetchBookings]);
-
-  const handleCancel = async (id: string) => {
-    const res = await fetch(`/api/admin/bookings/${id}`, { method: "DELETE" });
-    const json = await res.json();
-    if (json.success) fetchBookings();
-  };
-
+  const bookings = data?.bookings || [];
+  const totalPages = data?.totalPages || 1;
   const hasFilters = dateFilter || statusFilter;
 
   return (
@@ -65,7 +49,6 @@ export default function AdminBookingsPage() {
           <p className="mt-0.5 text-sm text-muted-foreground">Manage and review all booking records</p>
         </div>
 
-        {/* Filters */}
         <div className="mb-6 flex flex-wrap items-center gap-3">
           <Input type="date" value={dateFilter}
             onChange={(e) => { setDateFilter(e.target.value); setPage(1); }}
@@ -89,7 +72,7 @@ export default function AdminBookingsPage() {
 
         <Card className="rounded-2xl border-border/60">
           <CardContent className="pt-6">
-            {loading ? <PageLoading /> : bookings.length === 0 ? <EmptyState title="No bookings found" /> : (
+            {isLoading ? <PageLoading /> : bookings.length === 0 ? <EmptyState title="No bookings found" /> : (
               <>
                 <div className="overflow-x-auto">
                   <Table>
@@ -106,54 +89,60 @@ export default function AdminBookingsPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {bookings.map((b: any) => (
-                        <TableRow key={b._id}>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[10px] font-semibold text-primary">
-                                {(b.userId?.name || b.passengerName || "?").charAt(0).toUpperCase()}
+                      {bookings.map((b) => {
+                        const user = b.userId as { name?: string; email?: string } | undefined;
+                        const route = b.routeId as { from: string; to: string } | undefined;
+                        const timeslot = b.timeslotId as { date: string; time: string } | undefined;
+                        const payment = b.paymentId as { method?: string } | undefined;
+                        return (
+                          <TableRow key={b._id}>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[10px] font-semibold text-primary">
+                                  {(user?.name || b.passengerName || "?").charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium">{user?.name || b.passengerName}</p>
+                                  <p className="text-[11px] text-muted-foreground">{user?.email}</p>
+                                </div>
                               </div>
-                              <div>
-                                <p className="text-sm font-medium">{b.userId?.name || b.passengerName}</p>
-                                <p className="text-[11px] text-muted-foreground">{b.userId?.email}</p>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {b.routeId ? `${b.routeId.from} → ${b.routeId.to}` : "N/A"}
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {b.timeslotId ? `${b.timeslotId.date} ${b.timeslotId.time}` : "N/A"}
-                          </TableCell>
-                          <TableCell>{b.passengers}</TableCell>
-                          <TableCell className="font-semibold">{b.totalPrice} THB</TableCell>
-                          <TableCell className="text-sm text-muted-foreground">{b.paymentId?.method || "N/A"}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className={statusStyles[b.status] || ""}>{b.status}</Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {b.status !== "cancelled" && (
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10">
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Cancel this booking?</AlertDialogTitle>
-                                    <AlertDialogDescription>Seats will be released and payment refunded if applicable.</AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Keep</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleCancel(b._id)}>Cancel Booking</AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {route ? `${route.from} → ${route.to}` : "N/A"}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {timeslot ? `${timeslot.date} ${timeslot.time}` : "N/A"}
+                            </TableCell>
+                            <TableCell>{b.passengers}</TableCell>
+                            <TableCell className="font-semibold">{b.totalPrice} THB</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">{payment?.method || "N/A"}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className={statusStyles[b.status] || ""}>{b.status}</Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {b.status !== "cancelled" && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10">
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Cancel this booking?</AlertDialogTitle>
+                                      <AlertDialogDescription>Seats will be released and payment refunded if applicable.</AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Keep</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => cancelBooking.mutate(b._id)}>Cancel Booking</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>

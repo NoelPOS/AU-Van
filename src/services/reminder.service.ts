@@ -1,4 +1,3 @@
-import { connectDB } from "@/libs/mongodb";
 import Booking from "@/models/Booking";
 import ReminderJob from "@/models/ReminderJob";
 import Timeslot from "@/models/Timeslot";
@@ -56,7 +55,6 @@ class ReminderService {
   }
 
   async scheduleForBooking(bookingId: string) {
-    await connectDB();
 
     const booking = await Booking.findById(bookingId).lean();
     if (!booking) return { queued: 0 };
@@ -106,7 +104,6 @@ class ReminderService {
   }
 
   async cancelForBooking(bookingId: string) {
-    await connectDB();
     const result = await ReminderJob.updateMany(
       { bookingId, status: { $in: ["pending", "failed", "processing"] } },
       {
@@ -120,7 +117,6 @@ class ReminderService {
   }
 
   async processDueReminders(limit = 20) {
-    await connectDB();
 
     const processed: Array<{ jobId: string; status: "sent" | "failed"; error?: string }> = [];
     for (let i = 0; i < limit; i += 1) {

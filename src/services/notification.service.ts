@@ -1,8 +1,10 @@
 import { connectDB } from "@/libs/mongodb";
 import Notification from "@/models/Notification";
+// NOTE: connectDB() kept here because notification service is called via EventBus
+// (not always from an API route that calls auth guards)
 import User from "@/models/User";
 import { NotificationFactory } from "@/factories/notification.factory";
-import type { NotificationPayload } from "@/strategies/notification/notification.strategy";
+import type { NotificationPayload, NotificationResult } from "@/strategies/notification/notification.strategy";
 import { eventBus, Events } from "@/lib/events";
 
 class NotificationService {
@@ -68,6 +70,25 @@ class NotificationService {
     });
   }
 
+  private async persistNotification(
+    payload: NotificationPayload,
+    result: NotificationResult
+  ) {
+    if (result.deliveryStatus === "skipped") return;
+
+    await Notification.create({
+      userId: payload.userId,
+      type: payload.type,
+      title: payload.title,
+      message: payload.message,
+      data: payload.data,
+      read: false,
+      channel: result.channel,
+      deliveryStatus: result.deliveryStatus,
+      externalMessageId: result.externalMessageId,
+    });
+  }
+
   async notifyUser(
     userId: string,
     notification: { type: string; title: string; message: string; data?: Record<string, unknown> }
@@ -87,7 +108,15 @@ class NotificationService {
     };
 
     const strategies = NotificationFactory.createAll();
-    await Promise.allSettled(strategies.map((strategy) => strategy.send(payload)));
+    const results = await Promise.allSettled(
+      strategies.map((strategy) => strategy.send(payload))
+    );
+
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        await this.persistNotification(payload, result.value);
+      }
+    }
   }
 
   async notifyAdmins(notification: {
@@ -111,12 +140,19 @@ class NotificationService {
       };
 
       const strategies = NotificationFactory.createAll();
-      await Promise.allSettled(strategies.map((strategy) => strategy.send(payload)));
+      const results = await Promise.allSettled(
+        strategies.map((strategy) => strategy.send(payload))
+      );
+
+      for (const result of results) {
+        if (result.status === "fulfilled") {
+          await this.persistNotification(payload, result.value);
+        }
+      }
     }
   }
 
   async getUserNotifications(userId: string, limit = 20, skip = 0) {
-    await connectDB();
     return Notification.find({ userId })
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -125,12 +161,10 @@ class NotificationService {
   }
 
   async getUnreadCount(userId: string): Promise<number> {
-    await connectDB();
     return Notification.countDocuments({ userId, read: false });
   }
 
   async markAsRead(notificationId: string, userId: string) {
-    await connectDB();
     return Notification.findOneAndUpdate(
       { _id: notificationId, userId },
       { read: true },
@@ -139,12 +173,10 @@ class NotificationService {
   }
 
   async markAllAsRead(userId: string) {
-    await connectDB();
     return Notification.updateMany({ userId, read: false }, { read: true });
   }
 
   async deleteNotification(notificationId: string, userId: string) {
-    await connectDB();
     return Notification.findOneAndDelete({ _id: notificationId, userId });
   }
 }

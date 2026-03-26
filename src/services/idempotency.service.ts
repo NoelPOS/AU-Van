@@ -1,5 +1,4 @@
 import crypto from "crypto";
-import { connectDB } from "@/libs/mongodb";
 import IdempotencyKey from "@/models/IdempotencyKey";
 
 type StartRequestParams = {
@@ -38,7 +37,7 @@ class IdempotencyService {
     const normalizedKey = params.key?.trim();
     if (!normalizedKey) return { mode: "skip" };
 
-    await connectDB();
+
 
     const requestHash = buildPayloadHash(params.payload);
     let existing = await IdempotencyKey.findOne({
@@ -57,8 +56,8 @@ class IdempotencyService {
           status: "in_progress",
         });
         return { mode: "new", recordId: String(created._id) };
-      } catch (error: any) {
-        if (error?.code !== 11000) throw error;
+      } catch (error) {
+        if ((error as { code?: number }).code !== 11000) throw error;
         existing = await IdempotencyKey.findOne({
           userId: params.userId,
           scope: params.scope,
@@ -108,7 +107,7 @@ class IdempotencyService {
     responseData: unknown,
     responseStatus = 200
   ): Promise<void> {
-    await connectDB();
+
     await IdempotencyKey.findByIdAndUpdate(recordId, {
       $set: {
         status: "completed",
@@ -120,7 +119,7 @@ class IdempotencyService {
   }
 
   async failRequest(recordId: string, errorMessage: string): Promise<void> {
-    await connectDB();
+
     await IdempotencyKey.findByIdAndUpdate(recordId, {
       $set: {
         status: "failed",

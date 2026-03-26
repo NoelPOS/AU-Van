@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,64 +17,39 @@ import {
 import { PageLoading } from "@/components/shared/loading";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Plus, Trash2, X } from "lucide-react";
-import type { IRoute } from "@/types";
+import { useRoutes, useAdminTimeslots, useCreateTimeslot, useCancelTimeslot } from "@/hooks/queries";
 
 export default function AdminTimeslotsPage() {
-  const [routes, setRoutes] = useState<IRoute[]>([]);
-  const [timeslots, setTimeslots] = useState<any[]>([]);
   const [selectedRoute, setSelectedRoute] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
   const [showForm, setShowForm] = useState(false);
-
   const [form, setForm] = useState({ routeId: "", date: "", time: "", totalSeats: 12 });
 
-  useEffect(() => {
-    fetch("/api/admin/routes")
-      .then((r) => r.json())
-      .then((json) => {
-        if (json.success) {
-          setRoutes(json.data);
-          if (json.data.length > 0) {
-            setSelectedRoute(json.data[0]._id);
-            setForm((f) => ({ ...f, routeId: json.data[0]._id }));
-          }
-        }
-      })
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: routes = [], isLoading: loadingRoutes } = useRoutes();
 
-  useEffect(() => {
-    if (!selectedRoute) return;
-    fetch(`/api/admin/timeslots?routeId=${selectedRoute}`)
-      .then((r) => r.json())
-      .then((json) => { if (json.success) setTimeslots(json.data); });
-  }, [selectedRoute]);
+  // Auto-select first route when routes load
+  const activeRoute = selectedRoute || routes[0]?._id || "";
+  const activeFormRouteId = form.routeId || activeRoute;
+
+  const { data: timeslots = [] } = useAdminTimeslots(activeRoute);
+  const createTimeslot = useCreateTimeslot();
+  const cancelTimeslot = useCancelTimeslot();
 
   const handleCreate = async () => {
-    setCreating(true);
-    const res = await fetch("/api/admin/timeslots", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, totalSeats: Number(form.totalSeats) }),
-    });
-    const json = await res.json();
-    setCreating(false);
-    if (json.success) {
+    try {
+      await createTimeslot.mutateAsync({
+        routeId: activeFormRouteId,
+        date: form.date,
+        time: form.time,
+        totalSeats: Number(form.totalSeats),
+      });
       setShowForm(false);
-      setForm({ routeId: selectedRoute, date: "", time: "", totalSeats: 12 });
-      const r2 = await fetch(`/api/admin/timeslots?routeId=${selectedRoute}`);
-      const j2 = await r2.json();
-      if (j2.success) setTimeslots(j2.data);
+      setForm({ routeId: activeRoute, date: "", time: "", totalSeats: 12 });
+    } catch {
+      // error available via createTimeslot.error
     }
   };
 
-  const handleDelete = async (id: string) => {
-    await fetch(`/api/admin/timeslots/${id}`, { method: "DELETE" });
-    setTimeslots((prev) => prev.filter((t) => t._id !== id));
-  };
-
-  if (loading) return <PageLoading />;
+  if (loadingRoutes) return <PageLoading />;
 
   return (
     <div className="min-h-[calc(100vh-3.5rem)] bg-background">
@@ -95,7 +70,7 @@ export default function AdminTimeslotsPage() {
             <CardContent className="grid gap-4 sm:grid-cols-2">
               <div>
                 <Label className="text-xs font-medium">Route</Label>
-                <select value={form.routeId}
+                <select value={activeFormRouteId}
                   onChange={(e) => setForm({ ...form, routeId: e.target.value })}
                   className="mt-1.5 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm">
                   {routes.map((r) => (
@@ -118,8 +93,8 @@ export default function AdminTimeslotsPage() {
                   onChange={(e) => setForm({ ...form, totalSeats: Number(e.target.value) })} className="mt-1.5 rounded-xl" />
               </div>
               <div className="sm:col-span-2">
-                <Button onClick={handleCreate} disabled={creating || !form.date || !form.time}
-                  className="w-full rounded-xl">{creating ? "Creating..." : "Create Timeslot"}</Button>
+                <Button onClick={handleCreate} disabled={createTimeslot.isPending || !form.date || !form.time}
+                  className="w-full rounded-xl">{createTimeslot.isPending ? "Creating..." : "Create Timeslot"}</Button>
               </div>
             </CardContent>
           </Card>
@@ -128,7 +103,7 @@ export default function AdminTimeslotsPage() {
         {/* Route tabs */}
         <div className="flex gap-2 flex-wrap">
           {routes.map((r) => (
-            <Button key={r._id} variant={selectedRoute === r._id ? "default" : "outline"} size="sm" className="rounded-xl"
+            <Button key={r._id} variant={activeRoute === r._id ? "default" : "outline"} size="sm" className="rounded-xl"
               onClick={() => setSelectedRoute(r._id)}>
               {r.from} → {r.to}
             </Button>
@@ -180,7 +155,7 @@ export default function AdminTimeslotsPage() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Keep</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(ts._id)}>Cancel Timeslot</AlertDialogAction>
+                              <AlertDialogAction onClick={() => cancelTimeslot.mutate(ts._id)}>Cancel Timeslot</AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>

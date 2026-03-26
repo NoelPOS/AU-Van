@@ -7,27 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LiffPageLoading } from "@/components/shared/loading";
-
-interface BookingSnapshot {
-  _id: string;
-  totalPrice: number;
-  routeId?: { from: string; to: string };
-  timeslotId?: { date: string; time: string };
-  paymentId?: {
-    method: "cash" | "bank_transfer" | "promptpay";
-    status: "pending" | "pending_review" | "completed" | "failed" | "refunded";
-  };
-}
+import { LiffPageHeader } from "@/components/layout/liff-page-header";
+import { useBooking, useSubmitPaymentProof } from "@/hooks/queries";
 
 export default function PaymentProofPage() {
   const { bookingId } = useParams<{ bookingId: string }>();
   const router = useRouter();
-  const [booking, setBooking] = useState<BookingSnapshot | null>(null);
   const [proofReference, setProofReference] = useState("");
   const [paidAt, setPaidAt] = useState("");
   const [proofImage, setProofImage] = useState<File | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const proofIdempotencyKeyRef = useRef("");
   const qrImageUrl = process.env.NEXT_PUBLIC_PAYMENT_QR_IMAGE_URL?.trim() || "";
@@ -35,19 +23,13 @@ export default function PaymentProofPage() {
   const accountNumber = process.env.NEXT_PUBLIC_PAYMENT_ACCOUNT_NUMBER?.trim() || "";
   const bankName = process.env.NEXT_PUBLIC_PAYMENT_BANK_NAME?.trim() || "";
 
-  useEffect(() => {
-    fetch(`/api/liff/bookings/${bookingId}`)
-      .then((response) => response.json())
-      .then((json) => {
-        if (!json.success) {
-          setError(json.error || "Booking not found");
-          return;
-        }
-        setBooking(json.data);
-      })
-      .catch(() => setError("Failed to load booking"))
-      .finally(() => setLoading(false));
-  }, [bookingId]);
+  const { data: booking, isLoading } = useBooking(bookingId);
+  const submitProofMutation = useSubmitPaymentProof();
+
+  const payment = booking?.paymentId as {
+    method: "cash" | "bank_transfer" | "promptpay";
+    status: "pending" | "pending_review" | "completed" | "failed" | "refunded";
+  } | undefined;
 
   useEffect(() => {
     proofIdempotencyKeyRef.current = "";
@@ -55,39 +37,29 @@ export default function PaymentProofPage() {
 
   const submitProof = async () => {
     if (!proofImage || !proofReference) return;
-    setSaving(true);
     setError("");
 
     try {
-      const form = new FormData();
-      form.append("proofImage", proofImage);
-      form.append("proofReference", proofReference);
-      if (paidAt) form.append("paidAt", paidAt);
+      const formData = new FormData();
+      formData.append("proofImage", proofImage);
+      formData.append("proofReference", proofReference);
+      if (paidAt) formData.append("paidAt", paidAt);
 
-      const response = await fetch(`/api/liff/bookings/${bookingId}/payment-proof`, {
-        method: "POST",
-        headers: {
-          "Idempotency-Key":
-            proofIdempotencyKeyRef.current ||
-            (proofIdempotencyKeyRef.current = crypto.randomUUID()),
-        },
-        body: form,
-      });
-      const json = await response.json();
-      if (!json.success) {
-        setError(json.error || "Failed to submit payment proof");
-        return;
-      }
+      const key =
+        proofIdempotencyKeyRef.current ||
+        (proofIdempotencyKeyRef.current = crypto.randomUUID());
+      formData.append("idempotencyKey", key);
 
+      await submitProofMutation.mutateAsync({ bookingId, formData });
       router.push("/mybookings");
-    } catch {
-      setError("Failed to submit payment proof");
-    } finally {
-      setSaving(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to submit payment proof");
     }
   };
 
-  if (loading) {
+  const saving = submitProofMutation.isPending;
+
+  if (isLoading) {
     return <LiffPageLoading title="Loading payment details" subtitle="Preparing your booking summary..." />;
   }
 
@@ -101,20 +73,28 @@ export default function PaymentProofPage() {
     );
   }
 
+  const routeData = booking.routeId as { from: string; to: string } | undefined;
+  const timeslotData = booking.timeslotId as { date: string; time: string } | undefined;
+
   return (
     <div className="px-4 pb-6 pt-3">
-      <h1 className="text-sm font-semibold text-[#1f2f8d]">Pay and Upload Proof</h1>
+      <LiffPageHeader
+        title="Pay and Upload Proof"
+        subtitle="Complete payment and submit slip for admin review"
+        showBack
+        backHref="/mybookings"
+      />
 
-      <div className="mt-3 rounded-xl border border-[#d6dcf4] bg-white p-3">
+      <div className="rounded-xl border border-[#d6dcf4] bg-white p-3">
         <p className="text-[11px] font-semibold text-[#3041a1]">
-          {booking.routeId ? `${booking.routeId.from} - ${booking.routeId.to}` : "Route"}
+          {routeData ? `${routeData.from} - ${routeData.to}` : "Route"}
         </p>
         <p className="mt-1 text-[10px] text-[#6f7cb6]">
-          {booking.timeslotId?.date || "-"} {booking.timeslotId?.time || ""}
+          {timeslotData?.date || "-"} {timeslotData?.time || ""}
         </p>
         <p className="mt-1 text-[11px] font-semibold text-[#3041a1]">{booking.totalPrice} THB</p>
         <p className="mt-1 text-[10px] uppercase text-[#6f7cb6]">
-          Method: {booking.paymentId?.method?.replace("_", " ") || "bank transfer"}
+          Method: {payment?.method?.replace("_", " ") || "bank transfer"}
         </p>
       </div>
 
@@ -126,7 +106,7 @@ export default function PaymentProofPage() {
           <li>Upload your slip image for admin review.</li>
         </ol>
 
-        {booking.paymentId?.method === "promptpay" && qrImageUrl && (
+        {payment?.method === "promptpay" && qrImageUrl && (
           <div className="mt-3 rounded-lg border border-[#dbe1f7] bg-[#f8f9ff] p-2">
             <p className="mb-2 text-[10px] font-semibold uppercase text-[#6f7cb6]">PromptPay QR</p>
             <Image
@@ -147,7 +127,7 @@ export default function PaymentProofPage() {
           </div>
         )}
 
-        {!qrImageUrl && booking.paymentId?.method === "promptpay" && (
+        {!qrImageUrl && payment?.method === "promptpay" && (
           <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-[10px] text-amber-700">
             QR image not configured yet. Set NEXT_PUBLIC_PAYMENT_QR_IMAGE_URL in env.
           </p>

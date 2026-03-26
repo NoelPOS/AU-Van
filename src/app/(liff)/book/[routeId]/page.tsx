@@ -1,13 +1,29 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, CalendarDays, Clock3, MapPin, Phone, UserRound } from "lucide-react";
+import { Clock3, MapPin, Phone, UserRound } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { SeatMap } from "@/components/seats/seat-map";
-import type { IRoute, ITimeslot, PaymentMethod } from "@/types";
+import { LiffPageLoading } from "@/components/shared/loading";
+import { LiffPageHeader } from "@/components/layout/liff-page-header";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { ITimeslot, PaymentMethod } from "@/types";
+import {
+  useRoute,
+  useTimeslots,
+  useLockSeats,
+  useReleaseSeats,
+  useCreateBooking,
+} from "@/hooks/queries";
 
 type Step = "seats" | "details";
 
@@ -18,19 +34,15 @@ export default function BookPage() {
   const queryDate = searchParams.get("date");
   const queryTimeslotId = searchParams.get("timeslotId");
 
-  const [route, setRoute] = useState<IRoute | null>(null);
-  const [timeslots, setTimeslots] = useState<ITimeslot[]>([]);
   const [selectedDate, setSelectedDate] = useState(
     queryDate || new Date().toISOString().split("T")[0]
   );
   const [selectedTimeslot, setSelectedTimeslot] = useState<ITimeslot | null>(null);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [step, setStep] = useState<Step>("seats");
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
   const [locksApplied, setLocksApplied] = useState(false);
   const [bookingCompleted, setBookingCompleted] = useState(false);
+  const [error, setError] = useState("");
   const bookingIdempotencyKeyRef = useRef("");
 
   const [form, setForm] = useState({
@@ -40,68 +52,49 @@ export default function BookPage() {
   });
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
 
-  const loadRouteAndTimeslots = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError("");
+  const { data: route, isLoading: loadingRoute } = useRoute(routeId);
+  const { data: timeslots = [], isLoading: loadingTimeslots } = useTimeslots(routeId, selectedDate);
+  const lockSeats = useLockSeats();
+  const releaseSeats = useReleaseSeats();
+  const createBooking = useCreateBooking();
 
-      const [routeRes, timeslotRes] = await Promise.all([
-        fetch(`/api/liff/routes/${routeId}`),
-        fetch(`/api/liff/timeslots?routeId=${routeId}&date=${selectedDate}`),
-      ]);
+  const loading = loadingRoute || loadingTimeslots;
 
-      const routeJson = await routeRes.json();
-      const timeslotJson = await timeslotRes.json();
-
-      if (!routeJson.success) {
-        setError(routeJson.error || "Route not found");
-        return;
-      }
-      setRoute(routeJson.data);
-
-      const slotList: ITimeslot[] = timeslotJson.success ? timeslotJson.data || [] : [];
-      setTimeslots(slotList);
-
-      if (slotList.length === 0) {
-        setSelectedTimeslot(null);
-        return;
-      }
-
-      const fromQuery = slotList.find((slot) => slot._id === queryTimeslotId);
-      setSelectedTimeslot(fromQuery || slotList[0]);
-    } catch {
-      setError("Failed to load booking data");
-    } finally {
-      setLoading(false);
-    }
-  }, [queryTimeslotId, routeId, selectedDate]);
-
+  // Auto-select timeslot when timeslots load
   useEffect(() => {
-    loadRouteAndTimeslots();
-  }, [loadRouteAndTimeslots]);
+    if (timeslots.length === 0) {
+      setSelectedTimeslot(null);
+      return;
+    }
+    const fromQuery = timeslots.find((slot) => slot._id === queryTimeslotId);
+    setSelectedTimeslot(fromQuery || timeslots[0]);
+  }, [timeslots, queryTimeslotId]);
 
-  const releaseLockedSeats = useCallback(async () => {
+  const releaseLockedSeats = async () => {
     if (!locksApplied || !selectedTimeslot || selectedSeats.length === 0) return;
     try {
-      await fetch(`/api/seats/${selectedTimeslot._id}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seatIds: selectedSeats }),
+      await releaseSeats.mutateAsync({
+        timeslotId: selectedTimeslot._id,
+        seatIds: selectedSeats,
       });
     } catch {
       // silent
     } finally {
       setLocksApplied(false);
     }
-  }, [locksApplied, selectedSeats, selectedTimeslot]);
+  };
 
   useEffect(() => {
     return () => {
-      if (!bookingCompleted) {
-        void releaseLockedSeats();
+      if (!bookingCompleted && locksApplied && selectedTimeslot && selectedSeats.length > 0) {
+        void releaseSeats.mutateAsync({
+          timeslotId: selectedTimeslot._id,
+          seatIds: selectedSeats,
+        }).catch(() => {});
       }
     };
-  }, [bookingCompleted, releaseLockedSeats]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookingCompleted, locksApplied, selectedTimeslot?._id, selectedSeats]);
 
   useEffect(() => {
     bookingIdempotencyKeyRef.current = "";
@@ -112,81 +105,58 @@ export default function BookPage() {
 
   const lockSeatsAndContinue = async () => {
     if (!selectedTimeslot || selectedSeatCount === 0) return;
-
-    setSubmitting(true);
     setError("");
 
     try {
-      const response = await fetch(`/api/seats/${selectedTimeslot._id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seatIds: selectedSeats }),
+      await lockSeats.mutateAsync({
+        timeslotId: selectedTimeslot._id,
+        seatIds: selectedSeats,
       });
-      const json = await response.json();
-      if (!json.success) {
-        setError(json.error || "Unable to lock seats. Please try again.");
-        return;
-      }
-
       setLocksApplied(true);
       setStep("details");
-    } catch {
-      setError("Unable to lock seats. Please try again.");
-    } finally {
-      setSubmitting(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to lock seats. Please try again.");
     }
   };
 
   const submitBooking = async () => {
     if (!selectedTimeslot || !route) return;
     if (!form.passengerName || !form.passengerPhone || !form.pickupLocation) return;
-
-    setSubmitting(true);
     setError("");
 
     try {
-      const response = await fetch("/api/liff/bookings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Idempotency-Key":
-            bookingIdempotencyKeyRef.current ||
-            (bookingIdempotencyKeyRef.current = crypto.randomUUID()),
-        },
-        body: JSON.stringify({
-          routeId,
-          timeslotId: selectedTimeslot._id,
-          seatIds: selectedSeats,
-          passengerName: form.passengerName,
-          passengerPhone: form.passengerPhone,
-          pickupLocation: form.pickupLocation,
-          paymentMethod,
-          sourceChannel: "liff",
-        }),
+      const key =
+        bookingIdempotencyKeyRef.current ||
+        (bookingIdempotencyKeyRef.current = crypto.randomUUID());
+
+      const result = await createBooking.mutateAsync({
+        routeId,
+        timeslotId: selectedTimeslot._id,
+        seatIds: selectedSeats,
+        passengerName: form.passengerName,
+        passengerPhone: form.passengerPhone,
+        pickupLocation: form.pickupLocation,
+        paymentMethod,
+        sourceChannel: "liff",
+        idempotencyKey: key,
       });
 
-      const json = await response.json();
-      if (!json.success) {
-        setError(json.error || "Booking failed");
-        return;
-      }
-
       setBookingCompleted(true);
-      const bookingId = json.data?._id;
+      const bookingId = (result as { _id?: string })?._id;
       if (paymentMethod === "cash" || !bookingId) {
         router.push("/mybookings");
       } else {
         router.push(`/payment/${bookingId}`);
       }
-    } catch {
-      setError("Something went wrong while confirming booking.");
-    } finally {
-      setSubmitting(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong while confirming booking.");
     }
   };
 
+  const submitting = lockSeats.isPending || createBooking.isPending;
+
   if (loading) {
-    return <p className="px-4 py-8 text-center text-xs text-[#6e7ab4]">Loading booking flow...</p>;
+    return <LiffPageLoading title="Loading booking flow" subtitle="Preparing seats and timeslots..." />;
   }
 
   if (!route) {
@@ -201,24 +171,20 @@ export default function BookPage() {
 
   return (
     <div className="px-4 pb-6 pt-3">
-      <button
-        className="mb-2 inline-flex items-center gap-1 text-xs text-[#4f62d3]"
-        onClick={() => {
-          if (step === "details") {
-            void releaseLockedSeats();
-            setStep("seats");
-            return;
-          }
-          router.push("/");
-        }}
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        Back
-      </button>
-
-      <h1 className="text-sm font-semibold text-[#1f2f8d]">
-        {step === "seats" ? "Choose Seat" : "Book your Seat"}
-      </h1>
+      <LiffPageHeader
+        title={step === "seats" ? "Choose Seat" : "Booking Details"}
+        subtitle={step === "seats" ? "Select time and seats" : "Complete passenger details"}
+        showBack
+        backHref={step === "details" ? undefined : "/"}
+        onBack={
+          step === "details"
+            ? () => {
+                void releaseLockedSeats();
+                setStep("seats");
+              }
+            : undefined
+        }
+      />
 
       <div className="mt-3 rounded-xl border border-[#d6dcf4] bg-white p-3">
         <div className="space-y-1 text-[11px] text-[#4355b9]">
@@ -228,21 +194,18 @@ export default function BookPage() {
           </p>
           <div className="pt-1">
             <label className="mb-1 block text-[10px] font-semibold uppercase text-[#7682bb]">Date</label>
-            <div className="relative">
-              <Input
-                type="date"
-                value={selectedDate}
-                min={new Date().toISOString().split("T")[0]}
-                onChange={(event) => {
-                  void releaseLockedSeats();
-                  setSelectedDate(event.target.value);
-                  setSelectedSeats([]);
-                  setLocksApplied(false);
-                }}
-                className="h-8 border-[#d7dcf3] bg-white pr-8 text-xs text-[#26368f]"
-              />
-              <CalendarDays className="pointer-events-none absolute right-2 top-2 h-3.5 w-3.5 text-[#91a0dd]" />
-            </div>
+            <Input
+              type="date"
+              value={selectedDate}
+              min={new Date().toISOString().split("T")[0]}
+              onChange={(event) => {
+                void releaseLockedSeats();
+                setSelectedDate(event.target.value);
+                setSelectedSeats([]);
+                setLocksApplied(false);
+              }}
+              className="h-8 border-[#d7dcf3] bg-white text-xs text-[#26368f]"
+            />
           </div>
           <p className="inline-flex items-center gap-1.5">
             <Clock3 className="h-3.5 w-3.5" />
@@ -253,26 +216,30 @@ export default function BookPage() {
         {timeslots.length > 0 ? (
           <div className="mt-2">
             <label className="mb-1 block text-[10px] font-semibold uppercase text-[#7682bb]">Time</label>
-            <select
-              value={selectedTimeslot?._id || ""}
-              onChange={(event) => {
+            <Select
+              value={selectedTimeslot?._id}
+              onValueChange={(value) => {
                 void releaseLockedSeats();
-                const next = timeslots.find((slot) => slot._id === event.target.value) || null;
+                const next = timeslots.find((slot) => slot._id === value) || null;
                 setSelectedTimeslot(next);
                 setSelectedSeats([]);
                 setLocksApplied(false);
               }}
-              className="h-8 w-full rounded-md border border-[#d7dcf3] bg-white px-2 text-xs text-[#26368f] focus:outline-none focus:ring-1 focus:ring-[#3f53c9]"
             >
-              {timeslots.map((slot) => {
-                const available = slot.totalSeats - slot.bookedSeats;
-                return (
-                  <option key={slot._id} value={slot._id}>
-                    {slot.time} ({available} left)
-                  </option>
-                );
-              })}
-            </select>
+              <SelectTrigger className="h-8 border-[#d7dcf3] text-xs text-[#26368f]">
+                <SelectValue placeholder="Select a timeslot" />
+              </SelectTrigger>
+              <SelectContent>
+                {timeslots.map((slot) => {
+                  const available = slot.totalSeats - slot.bookedSeats;
+                  return (
+                    <SelectItem key={slot._id} value={slot._id}>
+                      {slot.time} ({available} left)
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
           </div>
         ) : (
           <div className="mt-2 rounded-lg border border-dashed border-[#d6dcf4] bg-[#f9faff] px-3 py-2">
@@ -306,7 +273,7 @@ export default function BookPage() {
                 disabled={selectedSeatCount === 0 || submitting}
                 onClick={lockSeatsAndContinue}
               >
-                {submitting
+                {lockSeats.isPending
                   ? "Locking seats..."
                   : `Continue (${selectedSeatCount} seat${selectedSeatCount === 1 ? "" : "s"})`}
               </Button>
@@ -426,7 +393,7 @@ export default function BookPage() {
                 !form.pickupLocation
               }
             >
-              {submitting
+              {createBooking.isPending
                 ? "Confirming..."
                 : paymentMethod === "cash"
                   ? "Confirm Booking"

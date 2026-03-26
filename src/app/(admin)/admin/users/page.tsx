@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,37 +10,18 @@ import {
 import { PageLoading } from "@/components/shared/loading";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Shield, ShieldOff } from "lucide-react";
+import { useAdminUsers, useToggleAdmin } from "@/hooks/queries";
 
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
-    const res = await fetch(`/api/admin/users?page=${page}&limit=20`);
-    const json = await res.json();
-    if (json.success) {
-      setUsers(json.data.users || []);
-      setTotalPages(json.data.totalPages || 1);
-    }
-    setLoading(false);
-  }, [page]);
+  const { data, isLoading } = useAdminUsers(page);
+  const toggleAdmin = useToggleAdmin();
 
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  const users = data?.users || [];
+  const totalPages = data?.totalPages || 1;
 
-  const toggleAdmin = async (id: string) => {
-    const res = await fetch(`/api/admin/users/${id}`, { method: "PUT" });
-    const json = await res.json();
-    if (json.success) {
-      setUsers((prev) =>
-        prev.map((u) => u._id === id ? { ...u, isAdmin: json.data.isAdmin } : u)
-      );
-    }
-  };
-
-  if (loading) return <PageLoading />;
+  if (isLoading) return <PageLoading />;
 
   return (
     <div className="min-h-[calc(100vh-3.5rem)] bg-background">
@@ -66,7 +47,7 @@ export default function AdminUsersPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.map((u: any) => (
+                    {users.map((u) => (
                       <TableRow key={u._id}>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -88,7 +69,7 @@ export default function AdminUsersPage() {
                           {new Date(u.createdAt).toLocaleDateString()}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="sm" onClick={() => toggleAdmin(u._id)}
+                          <Button variant="ghost" size="sm" onClick={() => toggleAdmin.mutate(u._id)}
                             className={u.isAdmin ? "text-destructive hover:bg-destructive/10" : "text-primary hover:bg-primary/10"}
                             title={u.isAdmin ? "Remove Admin" : "Make Admin"}>
                             {u.isAdmin ? <ShieldOff className="h-3.5 w-3.5" /> : <Shield className="h-3.5 w-3.5" />}
