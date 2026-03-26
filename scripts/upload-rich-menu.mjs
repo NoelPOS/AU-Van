@@ -27,7 +27,8 @@ const envVars = Object.fromEntries(
     .filter((line) => line && !line.startsWith("#"))
     .map((line) => {
       const idx = line.indexOf("=");
-      return [line.slice(0, idx), line.slice(idx + 1)];
+      const value = line.slice(idx + 1).replace(/^["']|["']$/g, "");
+      return [line.slice(0, idx), value];
     })
 );
 
