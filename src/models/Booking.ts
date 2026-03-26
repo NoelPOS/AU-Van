@@ -1,62 +1,73 @@
-import mongoose, { Schema, Document, models, model } from 'mongoose'
+import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface BookingDocument extends Document {
-  userid: string
-  _id: string
-  bookingDate: Date
-  name: string
-  place: string
-  phone: string
-  persons: number
-  route: string
-  time: string
-  createdAt: Date
-  updatedAt: Date
+  userId: mongoose.Types.ObjectId;
+  routeId: mongoose.Types.ObjectId;
+  timeslotId: mongoose.Types.ObjectId;
+  seatIds: mongoose.Types.ObjectId[];
+  passengers: number;
+  passengerName: string;
+  passengerPhone: string;
+  pickupLocation: string;
+  status:
+    | "pending"
+    | "pending_payment"
+    | "payment_under_review"
+    | "confirmed"
+    | "reschedule_requested"
+    | "cancelled"
+    | "completed";
+  paymentId?: mongoose.Types.ObjectId;
+  bookingCode?: string;
+  sourceChannel?: "web_admin" | "liff" | "line_bot";
+  rescheduledFromBookingId?: mongoose.Types.ObjectId;
+  totalPrice: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-const BookingSchema: Schema<BookingDocument> = new Schema(
+const BookingSchema = new Schema<BookingDocument>(
   {
-    userid: {
+    userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    routeId: { type: Schema.Types.ObjectId, ref: "Route", required: true },
+    timeslotId: { type: Schema.Types.ObjectId, ref: "Timeslot", required: true, index: true },
+    seatIds: [{ type: Schema.Types.ObjectId, ref: "Seat" }],
+    passengers: { type: Number, required: true, min: 1 },
+    passengerName: { type: String, required: true, trim: true },
+    passengerPhone: { type: String, required: true, trim: true },
+    pickupLocation: { type: String, required: true, trim: true },
+    status: {
       type: String,
-      required: true,
+      enum: [
+        "pending",
+        "pending_payment",
+        "payment_under_review",
+        "confirmed",
+        "reschedule_requested",
+        "cancelled",
+        "completed",
+      ],
+      default: "pending",
+      index: true,
     },
-    bookingDate: {
-      type: Date,
-      default: Date.now,
-      required: false,
-    },
-    name: {
+    paymentId: { type: Schema.Types.ObjectId, ref: "Payment" },
+    bookingCode: { type: String, unique: true, sparse: true, index: true },
+    sourceChannel: {
       type: String,
-      required: true,
+      enum: ["web_admin", "liff", "line_bot"],
+      default: "liff",
+      index: true,
     },
-    place: {
-      type: String,
-      required: true,
-    },
-    phone: {
-      type: String,
-      required: true,
-    },
-    persons: {
-      type: Number,
-      required: true,
-      min: 1,
-    },
-    route: {
-      type: String,
-      required: true,
-    },
-    time: {
-      type: String,
-      required: true,
-    },
+    rescheduledFromBookingId: { type: Schema.Types.ObjectId, ref: "Booking" },
+    totalPrice: { type: Number, required: true, min: 0 },
   },
-  {
-    timestamps: true,
-  }
-)
+  { timestamps: true }
+);
 
-const Booking =
-  models.Booking || model<BookingDocument>('Booking', BookingSchema)
+BookingSchema.index({ userId: 1, createdAt: -1 });
+BookingSchema.index({ timeslotId: 1, status: 1 });
 
-export default Booking
+const Booking: Model<BookingDocument> =
+  mongoose.models.Booking || mongoose.model<BookingDocument>("Booking", BookingSchema);
+
+export default Booking;
