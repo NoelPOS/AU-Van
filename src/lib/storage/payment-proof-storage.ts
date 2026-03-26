@@ -1,32 +1,20 @@
-import { mkdir, writeFile } from "fs/promises";
-import { extname, join } from "path";
+import type { PaymentProofStoragePort } from "./payment-proof-storage.port";
+import { LocalPaymentProofStorage } from "./payment-proof-storage.local";
+import { R2PaymentProofStorage } from "./payment-proof-storage.r2";
 
-const MAX_FILE_BYTES = 5 * 1024 * 1024;
-const ALLOWED_MIME_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-]);
+function getStorageDriver(): "local" | "r2" {
+  const driver = (process.env.PAYMENT_PROOF_STORAGE_DRIVER || "local").trim().toLowerCase();
+  if (driver === "local" || driver === "r2") return driver;
+  throw new Error("PAYMENT_PROOF_STORAGE_DRIVER must be one of: local, r2");
+}
 
-export async function savePaymentProofFile(
-  file: File,
-  bookingId: string
-): Promise<string> {
-  if (!ALLOWED_MIME_TYPES.has(file.type)) {
-    throw new Error("Only JPG, PNG, and WEBP images are supported");
-  }
-  if (file.size > MAX_FILE_BYTES) {
-    throw new Error("Proof image must be 5MB or smaller");
-  }
+function createPaymentProofStorage(): PaymentProofStoragePort {
+  const driver = getStorageDriver();
+  if (driver === "r2") return new R2PaymentProofStorage();
+  return new LocalPaymentProofStorage();
+}
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const extension = extname(file.name || "").toLowerCase() || ".jpg";
-  const folder = join(process.cwd(), "public", "uploads", "payment-proofs");
-  await mkdir(folder, { recursive: true });
-
-  const filename = `${bookingId}-${Date.now()}${extension}`;
-  const target = join(folder, filename);
-  await writeFile(target, buffer);
-
-  return `/uploads/payment-proofs/${filename}`;
+export async function savePaymentProofFile(file: File, bookingId: string): Promise<string> {
+  const storage = createPaymentProofStorage();
+  return storage.save(file, bookingId);
 }
