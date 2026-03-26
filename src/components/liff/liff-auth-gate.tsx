@@ -13,12 +13,17 @@ declare global {
         withLoginOnExternalBrowser?: boolean;
       }) => Promise<void>;
       isLoggedIn: () => boolean;
+      logout?: () => void;
       login: (config?: { redirectUri?: string }) => void;
       getIDToken: () => string | null;
       getProfile: () => Promise<{ displayName: string; pictureUrl?: string }>;
     };
   }
 }
+
+type JwtPayload = {
+  exp?: number;
+};
 
 async function loadLiffScript(): Promise<void> {
   if (window.liff) return;
@@ -39,6 +44,44 @@ async function loadLiffScript(): Promise<void> {
     script.onerror = () => reject(new Error("Failed to load LIFF SDK"));
     document.head.appendChild(script);
   });
+}
+
+function parseJwtPayload(idToken: string): JwtPayload | null {
+  try {
+    const parts = idToken.split(".");
+    if (parts.length < 2) return null;
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+    return JSON.parse(atob(padded)) as JwtPayload;
+  } catch {
+    return null;
+  }
+}
+
+function isIdTokenExpired(idToken: string): boolean {
+  const payload = parseJwtPayload(idToken);
+  if (!payload?.exp) return false;
+
+  const nowInSeconds = Math.floor(Date.now() / 1000);
+  return payload.exp <= nowInSeconds;
+}
+
+function isExpiredTokenError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error || "");
+  const normalized = message.toLowerCase();
+  return normalized.includes("idtoken expired") || normalized.includes("id token expired");
+}
+
+function reloginWithLine() {
+  if (!window.liff) return;
+  try {
+    if (window.liff.isLoggedIn() && window.liff.logout) {
+      window.liff.logout();
+    }
+  } catch {
+    // Ignore logout failures and continue with login redirect.
+  }
+  window.liff.login({ redirectUri: window.location.href });
 }
 
 export function LiffAuthGate({ children }: { children: React.ReactNode }) {
@@ -71,12 +114,16 @@ export function LiffAuthGate({ children }: { children: React.ReactNode }) {
         });
 
         if (!window.liff.isLoggedIn()) {
-          window.liff.login({ redirectUri: window.location.href });
+          reloginWithLine();
           return;
         }
 
         const idToken = window.liff.getIDToken();
         if (!idToken) throw new Error("Unable to read LIFF ID token");
+        if (isIdTokenExpired(idToken)) {
+          reloginWithLine();
+          return;
+        }
 
         let displayName = "";
         let avatar = "";
@@ -96,9 +143,17 @@ export function LiffAuthGate({ children }: { children: React.ReactNode }) {
         });
 
         if (result?.error) {
+          if (isExpiredTokenError(result.error)) {
+            reloginWithLine();
+            return;
+          }
           throw new Error(result.error);
         }
       } catch (err) {
+        if (isExpiredTokenError(err)) {
+          reloginWithLine();
+          return;
+        }
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "LIFF authentication failed");
         }
@@ -126,9 +181,14 @@ export function LiffAuthGate({ children }: { children: React.ReactNode }) {
           {loading ? "Checking your LIFF session." : "Waiting for authentication."}
         </p>
         {error && <p className="mt-2 text-[11px] text-red-600">{error}</p>}
-        <Button asChild className="mt-4 h-8 bg-[#3f53c9] text-[11px] hover:bg-[#3447b4]">
-          <Link href="/auth">Use web login</Link>
+        <Button onClick={reloginWithLine} className="mt-4 h-8 bg-[#3f53c9] text-[11px] hover:bg-[#3447b4]">
+          Retry LINE login
         </Button>
+        <div className="mt-2">
+          <Button asChild variant="ghost" className="h-7 text-[11px] text-[#5d6ec6] hover:text-[#2f3f9f]">
+            <Link href="/auth">Use web login</Link>
+          </Button>
+        </div>
       </div>
     </div>
   );
