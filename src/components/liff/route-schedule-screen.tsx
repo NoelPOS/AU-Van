@@ -3,15 +3,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { format } from "date-fns";
-import { Calendar, MapPin } from "lucide-react";
+import { addDays, format } from "date-fns";
+import { CalendarDays, ChevronDown, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LiffPageLoading } from "@/components/shared/loading";
 import type { IRoute, ITimeslot } from "@/types";
 
 export function RouteScheduleScreen() {
   const { status } = useSession();
   const router = useRouter();
+
   const [routes, setRoutes] = useState<IRoute[]>([]);
   const [timeslots, setTimeslots] = useState<ITimeslot[]>([]);
   const [selectedRouteId, setSelectedRouteId] = useState("");
@@ -19,16 +21,30 @@ export function RouteScheduleScreen() {
     () => new Date().toISOString().split("T")[0]
   );
   const [selectedTimeslotId, setSelectedTimeslotId] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loadingRoutes, setLoadingRoutes] = useState(true);
+  const [loadingTimeslots, setLoadingTimeslots] = useState(false);
   const [error, setError] = useState("");
+
+  const quickDates = useMemo(() => {
+    const base = new Date();
+    return [0, 1, 2].map((offset) => {
+      const date = addDays(base, offset);
+      return {
+        value: date.toISOString().split("T")[0],
+        label: offset === 0 ? "Today" : offset === 1 ? "Tomorrow" : format(date, "EEE"),
+      };
+    });
+  }, []);
 
   useEffect(() => {
     if (status !== "authenticated") {
-      setLoading(false);
+      setLoadingRoutes(false);
       return;
     }
 
-    setLoading(true);
+    setLoadingRoutes(true);
+    setError("");
+
     fetch("/api/liff/routes")
       .then((res) => res.json())
       .then((json) => {
@@ -42,11 +58,13 @@ export function RouteScheduleScreen() {
         if (list.length > 0) setSelectedRouteId(list[0]._id);
       })
       .catch(() => setError("Failed to load routes"))
-      .finally(() => setLoading(false));
+      .finally(() => setLoadingRoutes(false));
   }, [status]);
 
   useEffect(() => {
     if (status !== "authenticated" || !selectedRouteId) return;
+
+    setLoadingTimeslots(true);
 
     fetch(`/api/liff/timeslots?routeId=${selectedRouteId}&date=${selectedDate}`)
       .then((res) => res.json())
@@ -59,13 +77,14 @@ export function RouteScheduleScreen() {
 
         const list: ITimeslot[] = json.data || [];
         setTimeslots(list);
-        if (list.length > 0) setSelectedTimeslotId(list[0]._id);
+        if (list.length > 0) setSelectedTimeslotId((prev) => prev || list[0]._id);
         else setSelectedTimeslotId("");
       })
       .catch(() => {
         setTimeslots([]);
         setSelectedTimeslotId("");
-      });
+      })
+      .finally(() => setLoadingTimeslots(false));
   }, [selectedRouteId, selectedDate, status]);
 
   const selectedRoute = useMemo(
@@ -74,90 +93,113 @@ export function RouteScheduleScreen() {
   );
 
   if (status === "unauthenticated") {
-    return (
-      <div className="px-4 pb-8 pt-6">
-        <div className="rounded-xl border border-[#d4daf2] bg-white p-5 text-center">
-          <h1 className="text-base font-bold text-[#1f2f8d]">AU Van LIFF</h1>
-          <p className="mt-2 text-xs text-[#6470a8]">
-            Sign in to select your destination, time slot, and seat.
-          </p>
-          <Button className="mt-4 w-full bg-[#3f53c9] hover:bg-[#3447b4]" onClick={() => router.push("/auth")}>
-            Sign In
-          </Button>
-        </div>
-      </div>
-    );
+    return <LiffPageLoading title="Waiting for LINE session" subtitle="Please complete login to continue booking." />;
+  }
+
+  if (loadingRoutes) {
+    return <LiffPageLoading />;
   }
 
   return (
     <div className="px-4 pb-6 pt-3">
-      <h1 className="text-sm font-semibold text-[#1f2f8d]">Choose Your Destination</h1>
+      <header className="rounded-2xl bg-gradient-to-br from-[#4259ce] to-[#2f45b6] px-4 py-4 text-white shadow-[0_16px_30px_rgba(31,47,141,0.25)]">
+        <p className="text-[11px] uppercase tracking-wide text-white/70">AU Van Booking</p>
+        <h1 className="mt-1 text-base font-semibold">Choose your trip</h1>
+        <p className="mt-1 text-[11px] text-white/80">Pick destination, date, and slot in under a minute.</p>
+      </header>
 
-      <div className="mt-3 space-y-3 rounded-xl border border-[#d6dcf4] bg-white p-3">
+      <section className="mt-4 rounded-2xl border border-[#d6dcf4] bg-white p-3 shadow-[0_8px_20px_rgba(57,85,194,0.06)]">
         <div>
-          <label className="mb-1 block text-[10px] font-semibold uppercase text-[#7682bb]">
+          <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-[#7682bb]">
             From
           </label>
           <Input
             value={selectedRoute?.from || "Assumption University"}
             disabled
-            className="h-8 border-[#d7dcf3] bg-[#f7f8fd] text-xs text-[#26368f]"
+            className="h-10 border-[#d9def4] bg-[#f6f8ff] text-xs text-[#22339a]"
           />
         </div>
 
-        <div>
-          <label className="mb-1 block text-[10px] font-semibold uppercase text-[#7682bb]">
+        <div className="mt-3">
+          <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-[#7682bb]">
             To
           </label>
-          <select
-            value={selectedRouteId}
-            onChange={(event) => setSelectedRouteId(event.target.value)}
-            className="h-8 w-full rounded-md border border-[#d7dcf3] bg-white px-2 text-xs text-[#26368f] focus:outline-none focus:ring-1 focus:ring-[#3f53c9]"
-          >
-            {routes.map((route) => (
-              <option key={route._id} value={route._id}>
-                {route.to}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={selectedRouteId}
+              onChange={(event) => setSelectedRouteId(event.target.value)}
+              className="h-10 w-full appearance-none rounded-lg border border-[#d9def4] bg-white px-3 pr-8 text-xs text-[#22339a] focus:outline-none focus:ring-2 focus:ring-[#bac7ff]"
+            >
+              {routes.length === 0 && <option value="">No destination available</option>}
+              {routes.map((route) => (
+                <option key={route._id} value={route._id}>
+                  {route.to}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2.5 top-3 h-4 w-4 text-[#7f8ac2]" />
+          </div>
         </div>
 
-        <div>
-          <label className="mb-1 block text-[10px] font-semibold uppercase text-[#7682bb]">
+        <div className="mt-3">
+          <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-[#7682bb]">
             Date
           </label>
-          <div className="relative">
+          <div className="grid grid-cols-3 gap-2">
+            {quickDates.map((item) => {
+              const active = selectedDate === item.value;
+              return (
+                <button
+                  key={item.value}
+                  onClick={() => setSelectedDate(item.value)}
+                  className={`h-8 rounded-md border text-[10px] font-semibold transition-colors ${
+                    active
+                      ? "border-[#4f62d3] bg-[#eaf0ff] text-[#2d40a6]"
+                      : "border-[#d7ddf4] bg-white text-[#6f7cb6] hover:bg-[#f5f7ff]"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-2">
             <Input
               type="date"
               value={selectedDate}
               min={new Date().toISOString().split("T")[0]}
               onChange={(event) => setSelectedDate(event.target.value)}
-              className="h-8 border-[#d7dcf3] text-xs text-[#26368f]"
+              className="h-10 border-[#d9def4] text-xs text-[#22339a]"
             />
-            <Calendar className="pointer-events-none absolute right-2 top-2 h-3.5 w-3.5 text-[#8a96ce]" />
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="mt-4 rounded-xl border border-[#d6dcf4] bg-white p-3">
+      <section className="mt-4 rounded-2xl border border-[#d6dcf4] bg-white p-3 shadow-[0_8px_20px_rgba(57,85,194,0.06)]">
         <div className="mb-2 flex items-center justify-between">
-          <p className="text-[11px] font-semibold text-[#1f2f8d]">Available Timeslots</p>
-          {selectedRoute && (
-            <span className="text-[10px] text-[#7c88bf]">
-              {selectedRoute.from} - {selectedRoute.to}
-            </span>
-          )}
+          <p className="text-[11px] font-semibold text-[#22339a]">Available Timeslots</p>
+          <span className="text-[10px] text-[#7c88bf]">{format(new Date(selectedDate), "EEE, MMM d")}</span>
         </div>
 
-        {loading && <p className="py-4 text-center text-xs text-[#7d88bf]">Loading routes...</p>}
-        {error && !loading && (
-          <p className="rounded-md bg-red-50 px-2 py-1.5 text-[11px] text-red-600">{error}</p>
-        )}
-        {!loading && !error && timeslots.length === 0 && (
-          <p className="py-4 text-center text-xs text-[#7d88bf]">No timeslots available for this date.</p>
+        {error && (
+          <p className="rounded-md border border-red-100 bg-red-50 px-2 py-1.5 text-[11px] text-red-600">{error}</p>
         )}
 
-        {timeslots.length > 0 && (
+        {loadingTimeslots && (
+          <div className="space-y-2 py-2">
+            <div className="h-12 animate-pulse rounded-lg bg-[#f1f4ff]" />
+            <div className="h-12 animate-pulse rounded-lg bg-[#f1f4ff]" />
+          </div>
+        )}
+
+        {!loadingTimeslots && !error && timeslots.length === 0 && (
+          <div className="rounded-lg border border-dashed border-[#cad3f1] bg-[#fbfcff] px-3 py-7 text-center">
+            <CalendarDays className="mx-auto mb-2 h-5 w-5 text-[#98a5da]" />
+            <p className="text-xs text-[#6f7cb6]">No slots on this day. Try another date.</p>
+          </div>
+        )}
+
+        {!loadingTimeslots && timeslots.length > 0 && (
           <div className="grid grid-cols-2 gap-2">
             {timeslots.map((timeslot) => {
               const availableSeats = timeslot.totalSeats - timeslot.bookedSeats;
@@ -166,32 +208,29 @@ export function RouteScheduleScreen() {
                 <button
                   key={timeslot._id}
                   onClick={() => setSelectedTimeslotId(timeslot._id)}
-                  className={`rounded-lg border px-2 py-2 text-left transition-colors ${
+                  className={`rounded-xl border px-2 py-2 text-left transition-colors ${
                     active
-                      ? "border-[#3f53c9] bg-[#edf0fd]"
-                      : "border-[#e2e6f8] bg-[#fafbff] hover:border-[#c7cff0]"
+                      ? "border-[#445bd0] bg-[#ecf1ff]"
+                      : "border-[#e1e6f8] bg-[#fafbff] hover:border-[#c5cef0]"
                   }`}
                 >
-                  <p className="text-[11px] font-semibold text-[#2f3f9f]">{timeslot.time}</p>
-                  <div className="mt-1 space-y-0.5 text-[9px] text-[#7d88bf]">
-                    <p className="inline-flex items-center gap-1">
+                  <p className="text-[12px] font-semibold text-[#2f3f9f]">{timeslot.time}</p>
+                  <div className="mt-1 flex items-center justify-between text-[10px] text-[#6f7cb6]">
+                    <span className="inline-flex items-center gap-1">
                       <span className="h-1.5 w-1.5 rounded-full bg-[#57c088]" />
-                      {availableSeats} seats left
-                    </p>
-                    <p className="inline-flex items-center gap-1">
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#f5b94a]" />
-                      {selectedRoute?.price || 0} THB
-                    </p>
+                      {availableSeats} seats
+                    </span>
+                    <span>{selectedRoute?.price || 0} THB</span>
                   </div>
                 </button>
               );
             })}
           </div>
         )}
-      </div>
+      </section>
 
       <Button
-        className="mt-4 h-9 w-full bg-[#3f53c9] text-xs hover:bg-[#3447b4]"
+        className="mt-4 h-11 w-full rounded-xl bg-[#3f53c9] text-xs font-semibold hover:bg-[#3447b4]"
         disabled={!selectedRouteId || !selectedTimeslotId}
         onClick={() => {
           const query = new URLSearchParams({
@@ -201,14 +240,17 @@ export function RouteScheduleScreen() {
           router.push(`/book/${selectedRouteId}?${query.toString()}`);
         }}
       >
-        <span className="inline-flex items-center gap-1">
-          <MapPin className="h-3.5 w-3.5" />
+        <span className="inline-flex items-center gap-1.5">
+          <Ticket className="h-4 w-4" />
           Continue to Seat Selection
         </span>
       </Button>
 
       <p className="mt-2 text-center text-[10px] text-[#7d88bf]">
-        {format(new Date(selectedDate), "EEE, MMM d, yyyy")}
+        Route:{" "}
+        <span className="font-semibold text-[#5666b8]">
+          {selectedRoute ? `${selectedRoute.from} to ${selectedRoute.to}` : "-"}
+        </span>
       </p>
     </div>
   );

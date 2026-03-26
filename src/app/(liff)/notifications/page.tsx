@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { format, isToday, isYesterday } from "date-fns";
 import { Bell, Check, CheckCheck } from "lucide-react";
 import { useNotifications } from "@/context/notification.context";
+import { LiffPageLoading } from "@/components/shared/loading";
 
 export default function NotificationsPage() {
   const { notifications, loading, markAsRead, markAllAsRead } = useNotifications();
@@ -40,7 +41,7 @@ export default function NotificationsPage() {
       </div>
 
       {loading && notifications.length === 0 && (
-        <p className="py-8 text-center text-xs text-[#6470a8]">Loading notifications...</p>
+        <LiffPageLoading title="Loading notifications" subtitle="Checking your latest updates..." />
       )}
 
       {!loading && notifications.length === 0 && (

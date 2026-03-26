@@ -1,18 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSession, signOut } from "next-auth/react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { signOut, useSession } from "next-auth/react";
+import { AlertCircle, CheckCircle2, Lock, ShieldCheck, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { PageLoading } from "@/components/shared/loading";
-import { User, Lock, Trash2, Check, AlertCircle } from "lucide-react";
+import { LiffPageLoading } from "@/components/shared/loading";
+
+type ProfileData = {
+  name?: string;
+  phone?: string;
+  email?: string;
+  authProvider?: "local" | "google" | "line";
+  lineLinkedAt?: string;
+};
 
 export default function ProfilePage() {
   const { data: session, update } = useSession();
@@ -20,16 +22,23 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState({ type: "", text: "" });
 
+  const [userData, setUserData] = useState<ProfileData>({});
   const [profile, setProfile] = useState({ name: "", phone: "" });
   const [passwords, setPasswords] = useState({ oldPassword: "", newPassword: "" });
 
   useEffect(() => {
     if (!session?.user) return;
+
     fetch("/api/users/me")
       .then((r) => r.json())
       .then((json) => {
         if (json.success && json.data) {
-          setProfile({ name: json.data.name || "", phone: json.data.phone || "" });
+          const data = json.data as ProfileData;
+          setUserData(data);
+          setProfile({
+            name: data.name || "",
+            phone: data.phone || "",
+          });
         }
       })
       .finally(() => setLoading(false));
@@ -37,7 +46,7 @@ export default function ProfilePage() {
 
   const showMsg = (type: string, text: string) => {
     setMsg({ type, text });
-    setTimeout(() => setMsg({ type: "", text: "" }), 3000);
+    setTimeout(() => setMsg({ type: "", text: "" }), 3500);
   };
 
   const handleProfileUpdate = async () => {
@@ -49,9 +58,11 @@ export default function ProfilePage() {
     });
     const json = await res.json();
     setSaving(false);
+
     if (json.success) {
       showMsg("success", "Profile updated");
       update({ name: profile.name, phone: profile.phone });
+      setUserData((prev) => ({ ...prev, name: profile.name, phone: profile.phone }));
     } else {
       showMsg("error", json.error || "Update failed");
     }
@@ -66,128 +77,155 @@ export default function ProfilePage() {
     });
     const json = await res.json();
     setSaving(false);
+
     if (json.success) {
-      showMsg("success", "Password changed");
+      showMsg("success", "Password updated");
       setPasswords({ oldPassword: "", newPassword: "" });
     } else {
-      showMsg("error", json.error || "Password change failed");
+      showMsg("error", json.error || "Password update failed");
     }
   };
 
-  const handleDeleteAccount = async () => {
-    const res = await fetch("/api/users/me", { method: "DELETE" });
-    const json = await res.json();
-    if (json.success) {
-      signOut({ callbackUrl: "/auth" });
-    }
-  };
+  if (loading) {
+    return <LiffPageLoading title="Loading profile" subtitle="Getting your account details..." />;
+  }
 
-  if (loading) return <PageLoading />;
+  const provider = userData.authProvider || "local";
+  const canChangePassword = provider === "local";
+  const email = userData.email || session?.user?.email || "";
+  const initials = (profile.name || email || "U").charAt(0).toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#f7f8fc]">
-      <div className="mx-auto max-w-lg px-4 py-10 space-y-5">
-        {/* Header with avatar */}
-        <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-xl font-bold text-primary">
-            {session?.user?.name?.charAt(0)?.toUpperCase() || "U"}
+    <div className="px-4 pb-6 pt-3">
+      <section className="rounded-2xl bg-gradient-to-br from-[#4259ce] to-[#2f45b6] px-4 py-4 text-white shadow-[0_16px_30px_rgba(31,47,141,0.25)]">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 text-base font-semibold">
+            {initials}
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground">{session?.user?.name}</h1>
-            <p className="text-sm text-muted-foreground">{session?.user?.email}</p>
+            <h1 className="text-base font-semibold">{profile.name || "Profile"}</h1>
+            <p className="text-[11px] text-white/80">{email}</p>
           </div>
         </div>
+      </section>
 
-        {msg.text && (
-          <div className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm ${
+      {msg.text && (
+        <div
+          className={`mt-3 flex items-center gap-2 rounded-xl border px-3 py-2 text-[11px] ${
             msg.type === "success"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-              : "border-destructive/20 bg-destructive/5 text-destructive"
-          }`}>
-            {msg.type === "success" ? <Check className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
-            {msg.text}
+              ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+              : "border-red-100 bg-red-50 text-red-600"
+          }`}
+        >
+          {msg.type === "success" ? (
+            <CheckCircle2 className="h-4 w-4" />
+          ) : (
+            <AlertCircle className="h-4 w-4" />
+          )}
+          {msg.text}
+        </div>
+      )}
+
+      <section className="mt-3 rounded-2xl border border-[#d6dcf4] bg-white p-3 shadow-[0_8px_20px_rgba(57,85,194,0.06)]">
+        <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#2b3d9e]">
+          <UserRound className="h-4 w-4" />
+          Account Information
+        </p>
+        <div className="mt-3 space-y-3">
+          <div>
+            <Label className="text-[10px] font-semibold uppercase tracking-wide text-[#7a86bc]">Email</Label>
+            <Input value={email} disabled className="mt-1 h-9 border-[#d8def5] bg-[#f7f9ff] text-xs text-[#6470a8]" />
           </div>
-        )}
+          <div>
+            <Label className="text-[10px] font-semibold uppercase tracking-wide text-[#7a86bc]">Name</Label>
+            <Input
+              value={profile.name}
+              onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+              className="mt-1 h-9 border-[#d8def5] text-xs text-[#23349a]"
+            />
+          </div>
+          <div>
+            <Label className="text-[10px] font-semibold uppercase tracking-wide text-[#7a86bc]">Phone</Label>
+            <Input
+              value={profile.phone}
+              onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+              className="mt-1 h-9 border-[#d8def5] text-xs text-[#23349a]"
+              placeholder="e.g. 08xxxxxxxx"
+            />
+          </div>
+          <Button
+            onClick={handleProfileUpdate}
+            disabled={saving}
+            className="h-9 w-full bg-[#3f53c9] text-[12px] font-semibold hover:bg-[#3447b4]"
+          >
+            {saving ? "Saving..." : "Update Profile"}
+          </Button>
+        </div>
+      </section>
 
-        {/* Profile Info */}
-        <Card className="rounded-2xl border-border/60">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <User className="h-5 w-5 text-primary" /> Profile
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label className="text-xs font-medium">Email</Label>
-              <Input value={session?.user?.email || ""} disabled className="mt-1.5 rounded-xl bg-muted/50" />
-            </div>
-            <div>
-              <Label className="text-xs font-medium">Name</Label>
-              <Input value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} className="mt-1.5 rounded-xl" />
-            </div>
-            <div>
-              <Label className="text-xs font-medium">Phone</Label>
-              <Input value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} className="mt-1.5 rounded-xl" />
-            </div>
-            <Button onClick={handleProfileUpdate} disabled={saving} className="w-full rounded-xl">
-              {saving ? "Saving..." : "Update Profile"}
-            </Button>
-          </CardContent>
-        </Card>
+      <section className="mt-3 rounded-2xl border border-[#d6dcf4] bg-white p-3 shadow-[0_8px_20px_rgba(57,85,194,0.06)]">
+        <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#2b3d9e]">
+          <ShieldCheck className="h-4 w-4" />
+          Login Method
+        </p>
+        <p className="mt-2 text-[11px] text-[#6f7cb6]">
+          {provider === "line"
+            ? "This account is managed by LINE LIFF."
+            : provider === "google"
+              ? "This account uses Google sign-in."
+              : "This account uses email and password."}
+        </p>
+      </section>
 
-        {/* Change Password */}
-        <Card className="rounded-2xl border-border/60">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Lock className="h-5 w-5 text-primary" /> Change Password
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+      {canChangePassword && (
+        <section className="mt-3 rounded-2xl border border-[#d6dcf4] bg-white p-3 shadow-[0_8px_20px_rgba(57,85,194,0.06)]">
+          <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#2b3d9e]">
+            <Lock className="h-4 w-4" />
+            Change Password
+          </p>
+          <div className="mt-3 space-y-3">
             <div>
-              <Label className="text-xs font-medium">Current Password</Label>
-              <Input type="password" value={passwords.oldPassword}
-                onChange={(e) => setPasswords({ ...passwords, oldPassword: e.target.value })} className="mt-1.5 rounded-xl" />
+              <Label className="text-[10px] font-semibold uppercase tracking-wide text-[#7a86bc]">
+                Current Password
+              </Label>
+              <Input
+                type="password"
+                value={passwords.oldPassword}
+                onChange={(e) => setPasswords({ ...passwords, oldPassword: e.target.value })}
+                className="mt-1 h-9 border-[#d8def5] text-xs text-[#23349a]"
+              />
             </div>
             <div>
-              <Label className="text-xs font-medium">New Password</Label>
-              <Input type="password" value={passwords.newPassword}
+              <Label className="text-[10px] font-semibold uppercase tracking-wide text-[#7a86bc]">
+                New Password
+              </Label>
+              <Input
+                type="password"
+                value={passwords.newPassword}
                 onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
-                placeholder="Min. 6 characters" className="mt-1.5 rounded-xl" />
+                className="mt-1 h-9 border-[#d8def5] text-xs text-[#23349a]"
+                placeholder="At least 6 characters"
+              />
             </div>
-            <Button onClick={handlePasswordChange}
+            <Button
+              onClick={handlePasswordChange}
               disabled={saving || !passwords.oldPassword || passwords.newPassword.length < 6}
-              className="w-full rounded-xl">
-              Change Password
+              className="h-9 w-full bg-[#3f53c9] text-[12px] font-semibold hover:bg-[#3447b4]"
+            >
+              {saving ? "Updating..." : "Update Password"}
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
+      )}
 
-        {/* Danger Zone */}
-        <Card className="rounded-2xl border-destructive/20">
-          <CardContent className="flex items-center justify-between pt-6">
-            <div>
-              <p className="font-semibold text-destructive">Delete Account</p>
-              <p className="text-xs text-muted-foreground">This action is permanent and cannot be undone</p>
-            </div>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm" className="rounded-xl">
-                  <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete your account?</AlertDialogTitle>
-                  <AlertDialogDescription>This cannot be undone. All your data will be permanently deleted.</AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteAccount}>Delete Account</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </CardContent>
-        </Card>
+      <div className="mt-4">
+        <Button
+          variant="ghost"
+          onClick={() => signOut({ callbackUrl: "/auth" })}
+          className="h-8 w-full text-[11px] text-[#6f7cb6] hover:bg-[#eef2ff] hover:text-[#2f3f9f]"
+        >
+          Sign out
+        </Button>
       </div>
     </div>
   );

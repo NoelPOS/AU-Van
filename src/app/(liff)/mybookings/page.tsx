@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CalendarDays, Clock3, MapPin, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LiffPageLoading } from "@/components/shared/loading";
 
 interface BookingRow {
   _id: string;
@@ -66,7 +67,7 @@ export default function MyBookingsPage() {
         </div>
       </div>
 
-      {loading && <p className="py-8 text-center text-xs text-[#6e7ab4]">Loading bookings...</p>}
+      {loading && <LiffPageLoading title="Loading bookings" subtitle="Syncing your latest trips..." />}
 
       {!loading && filteredBookings.length === 0 && (
         <div className="mt-3 rounded-xl border border-dashed border-[#cbd3f1] bg-white px-4 py-10 text-center">

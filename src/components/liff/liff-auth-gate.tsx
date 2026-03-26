@@ -97,7 +97,7 @@ export function LiffAuthGate({ children }: { children: React.ReactNode }) {
     async function authenticateWithLiff() {
       const liffId = process.env.NEXT_PUBLIC_LINE_LIFF_ID;
       if (!liffId) {
-        setError("LIFF credentials are not configured yet. Use web login temporarily.");
+        setError("LINE login is not configured yet.");
         return;
       }
 
@@ -175,18 +175,27 @@ export function LiffAuthGate({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="px-4 py-6">
-      <div className="rounded-xl border border-[#d4daf2] bg-white p-5 text-center">
-        <p className="text-sm font-semibold text-[#1f2f8d]">Signing in with LINE...</p>
-        <p className="mt-2 text-xs text-[#6674b0]">
-          {loading ? "Checking your LIFF session." : "Waiting for authentication."}
+      <div className="rounded-2xl border border-[#d4dcfb] bg-white px-5 py-6 text-center shadow-[0_10px_24px_rgba(41,68,178,0.08)]">
+        <div className="mx-auto mb-3 h-11 w-11 rounded-full border border-[#cfdaff] bg-gradient-to-br from-[#f0f4ff] to-[#e5ecff] p-2.5">
+          <div className="h-full w-full animate-spin rounded-full border-2 border-[#b9c8ff] border-t-[#4f62d3]" />
+        </div>
+        <p className="text-base font-semibold text-[#1f2f8d]">Signing in with LINE</p>
+        <p className="mt-1 text-xs text-[#6674b0]">
+          {loading ? "Refreshing your LIFF session..." : "Waiting for authentication..."}
         </p>
-        {error && <p className="mt-2 text-[11px] text-red-600">{error}</p>}
-        <Button onClick={reloginWithLine} className="mt-4 h-8 bg-[#3f53c9] text-[11px] hover:bg-[#3447b4]">
-          Retry LINE login
+
+        {error && (
+          <p className="mt-2 rounded-lg border border-red-100 bg-red-50 px-2 py-1.5 text-[11px] text-red-600">
+            {error}
+          </p>
+        )}
+
+        <Button onClick={reloginWithLine} className="mt-4 h-9 w-full bg-[#3f53c9] text-[12px] font-semibold hover:bg-[#3447b4]">
+          Retry LINE Login
         </Button>
         <div className="mt-2">
           <Button asChild variant="ghost" className="h-7 text-[11px] text-[#5d6ec6] hover:text-[#2f3f9f]">
-            <Link href="/auth">Use web login</Link>
+            <Link href="/auth">Use web login (fallback/admin)</Link>
           </Button>
         </div>
       </div>

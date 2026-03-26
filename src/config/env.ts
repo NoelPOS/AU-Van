@@ -12,6 +12,12 @@ const envSchema = z.object({
   SMTP_PASS: z.string().default(""),
   SMTP_FROM: z.string().default("noreply@auvan.com"),
   SEAT_LOCK_TIMEOUT_MS: z.coerce.number().default(300000), // 5 min
+  PAYMENT_PROOF_STORAGE_DRIVER: z.enum(["local", "r2"]).default("local"),
+  R2_ACCOUNT_ID: z.string().optional(),
+  R2_ACCESS_KEY_ID: z.string().optional(),
+  R2_SECRET_ACCESS_KEY: z.string().optional(),
+  R2_BUCKET_NAME: z.string().optional(),
+  R2_PUBLIC_BASE_URL: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
