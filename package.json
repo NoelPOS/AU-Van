@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write .",
-    "test:integration": "vitest run tests/integration"
+    "test:integration": "vitest run tests/integration",
+    "seed:admin": "node scripts/seed-admin.mjs",
+    "seed:mock": "node scripts/seed-mock-data.mjs",
+    "seed:mock:reset": "node scripts/seed-mock-data.mjs --reset"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1017.0",
