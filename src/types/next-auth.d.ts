@@ -1,8 +1,31 @@
-import { Session } from 'next-auth'
-import { UserDocument } from './types'
+import "next-auth";
 
-declare module 'next-auth' {
+declare module "next-auth" {
   interface Session {
-    user: UserDocument
+    user: {
+      _id: string;
+      name: string;
+      email: string;
+      phone?: string;
+      image?: string;
+      isAdmin: boolean;
+    };
+  }
+
+  interface User {
+    _id: string;
+    name: string;
+    email: string;
+    phone?: string;
+    image?: string;
+    isAdmin: boolean;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    _id: string;
+    phone?: string;
+    isAdmin: boolean;
   }
 }

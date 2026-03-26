@@ -1,51 +1,51 @@
-import { Schema, model, models } from 'mongoose'
+import mongoose, { Schema, Document, Model } from "mongoose";
 
-export interface UserDocument {
-  email: string
-  password: string
-  name: string
-  phone: string
-  image: string
-  _id: string
-  createdAt: Date
-  updatedAt: Date
-  isAdmin: boolean
+export interface UserDocument extends Document {
+  email: string;
+  password: string;
+  lineUserId?: string;
+  authProvider: "local" | "google" | "line";
+  displayName?: string;
+  pictureUrl?: string;
+  lineLinkedAt?: Date;
+  name: string;
+  phone?: string;
+  image?: string;
+  isAdmin: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const UserSchema = new Schema<UserDocument>(
   {
     email: {
       type: String,
+      required: true,
       unique: true,
-      required: [true, 'Email is required'],
-      match: [
-        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-        'Email is invalid',
-      ],
+      lowercase: true,
+      trim: true,
+      index: true,
     },
-    password: {
+    password: { type: String, required: true },
+    lineUserId: { type: String, unique: true, sparse: true, index: true },
+    authProvider: {
       type: String,
-      required: [true, 'Password is required'],
+      enum: ["local", "google", "line"],
+      default: "local",
+      index: true,
     },
-    name: {
-      type: String,
-      required: [true, 'Fullname is required'],
-      minLength: [3, 'fullname must be at least 3 characters'],
-      maxLength: [25, 'fullname must be at most 25 characters'],
-    },
-    phone: {
-      type: String,
-      required: false,
-    },
-    isAdmin: {
-      type: Boolean,
-      default: false,
-    },
+    displayName: { type: String, trim: true },
+    pictureUrl: { type: String, trim: true },
+    lineLinkedAt: { type: Date },
+    name: { type: String, required: true, trim: true, minlength: 3, maxlength: 50 },
+    phone: { type: String, trim: true },
+    image: { type: String },
+    isAdmin: { type: Boolean, default: false, index: true },
   },
-  {
-    timestamps: true,
-  }
-)
+  { timestamps: true }
+);
 
-const User = models.User || model<UserDocument>('User', UserSchema)
-export default User
+const User: Model<UserDocument> =
+  mongoose.models.User || mongoose.model<UserDocument>("User", UserSchema);
+
+export default User;
