@@ -1,6 +1,7 @@
 // Observer Pattern - Global Event Emitter (Singleton)
 
 type EventHandler = (...args: unknown[]) => void | Promise<void>;
+const EVENT_HANDLER_TIMEOUT_MS = Number(process.env.EVENT_HANDLER_TIMEOUT_MS) || 4000;
 
 class EventBus {
   private static instance: EventBus;
@@ -36,10 +37,20 @@ class EventBus {
     if (!handlers) return;
 
     const promises = Array.from(handlers).map(async (handler) => {
+      let timeout: ReturnType<typeof setTimeout> | null = null;
       try {
-        await handler(...args);
+        await Promise.race([
+          Promise.resolve(handler(...args)),
+          new Promise<never>((_, reject) => {
+            timeout = setTimeout(() => {
+              reject(new Error(`Handler timeout after ${EVENT_HANDLER_TIMEOUT_MS}ms`));
+            }, EVENT_HANDLER_TIMEOUT_MS);
+          }),
+        ]);
       } catch (error) {
         console.error(`Event handler error for "${event}":`, error);
+      } finally {
+        if (timeout) clearTimeout(timeout);
       }
     });
 

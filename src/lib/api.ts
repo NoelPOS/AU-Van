@@ -11,12 +11,36 @@ class ApiError extends Error {
 }
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
+  const headers = new Headers(options?.headers);
+  const isFormData = options?.body instanceof FormData;
+  if (!isFormData && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
   const res = await fetch(url, {
-    headers: { "Content-Type": "application/json", ...options?.headers },
     ...options,
+    headers,
   });
 
-  const json: ApiResponse<T> = await res.json();
+  const raw = await res.text();
+  let json: ApiResponse<T> | null = null;
+
+  if (raw) {
+    try {
+      json = JSON.parse(raw) as ApiResponse<T>;
+    } catch {
+      const snippet = raw.slice(0, 180).replace(/\s+/g, " ").trim();
+      throw new ApiError(
+        snippet || `Server returned non-JSON response (HTTP ${res.status})`,
+        res.status
+      );
+    }
+  }
+
+  if (!json) {
+    if (res.ok) return null as T;
+    throw new ApiError(`Empty server response (HTTP ${res.status})`, res.status);
+  }
 
   if (!json.success) {
     throw new ApiError(json.error || "Request failed", res.status);

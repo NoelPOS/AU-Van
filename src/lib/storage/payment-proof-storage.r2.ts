@@ -15,12 +15,18 @@ type R2Config = {
   publicBaseUrl: string;
 };
 
+function normalizeEnv(value?: string): string {
+  const trimmed = (value || "").trim();
+  if (!trimmed) return "";
+  return trimmed.replace(/^"(.*)"$/, "$1").replace(/^'(.*)'$/, "$1");
+}
+
 function readR2Config(): R2Config {
-  const accountId = process.env.R2_ACCOUNT_ID?.trim() || "";
-  const accessKeyId = process.env.R2_ACCESS_KEY_ID?.trim() || "";
-  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY?.trim() || "";
-  const bucketName = process.env.R2_BUCKET_NAME?.trim() || "";
-  const publicBaseUrl = process.env.R2_PUBLIC_BASE_URL?.trim() || "";
+  const accountId = normalizeEnv(process.env.R2_ACCOUNT_ID);
+  const accessKeyId = normalizeEnv(process.env.R2_ACCESS_KEY_ID);
+  const secretAccessKey = normalizeEnv(process.env.R2_SECRET_ACCESS_KEY);
+  const bucketName = normalizeEnv(process.env.R2_BUCKET_NAME);
+  const publicBaseUrl = normalizeEnv(process.env.R2_PUBLIC_BASE_URL);
 
   if (!accountId || !accessKeyId || !secretAccessKey || !bucketName || !publicBaseUrl) {
     throw new Error(
