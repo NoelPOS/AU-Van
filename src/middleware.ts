@@ -6,14 +6,17 @@ export default withAuth(
     const { pathname } = req.nextUrl;
     const token = req.nextauth.token;
 
-    // Admin routes require isAdmin
+    // Admin routes require isAdmin — redirect non-admins to /auth
     if (pathname.startsWith("/admin") && !token?.isAdmin) {
-      return NextResponse.redirect(new URL("/", req.url));
+      return NextResponse.redirect(new URL("/auth", req.url));
     }
 
     return NextResponse.next();
   },
   {
+    pages: {
+      signIn: "/auth",
+    },
     callbacks: {
       authorized: ({ token, req }) => {
         const { pathname } = req.nextUrl;
