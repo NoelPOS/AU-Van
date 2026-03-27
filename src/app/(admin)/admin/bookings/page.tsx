@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
@@ -15,15 +18,28 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PageLoading } from "@/components/shared/loading";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Trash2, X } from "lucide-react";
+import { Ban, X } from "lucide-react";
 import { useAdminBookings, useAdminCancelBooking } from "@/hooks/queries";
 
+const STATUS_OPTIONS = [
+  { value: "pending_payment",       label: "Pending Payment" },
+  { value: "payment_under_review",  label: "Payment Under Review" },
+  { value: "confirmed",             label: "Confirmed" },
+  { value: "reschedule_requested",  label: "Reschedule Requested" },
+  { value: "completed",             label: "Completed" },
+  { value: "cancelled",             label: "Cancelled" },
+];
+
 const statusStyles: Record<string, string> = {
-  pending: "bg-amber-50 text-amber-700 border-amber-200",
-  confirmed: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  cancelled: "bg-red-50 text-red-600 border-red-200",
-  completed: "bg-primary/5 text-primary border-primary/20",
+  pending_payment:      "bg-amber-50 text-amber-700 border-amber-200",
+  payment_under_review: "bg-blue-50 text-blue-700 border-blue-200",
+  confirmed:            "bg-emerald-50 text-emerald-700 border-emerald-200",
+  reschedule_requested: "bg-purple-50 text-purple-700 border-purple-200",
+  completed:            "bg-primary/5 text-primary border-primary/20",
+  cancelled:            "bg-red-50 text-red-600 border-red-200",
 };
+
+const ACTIVE_STATUSES = new Set(["pending_payment", "payment_under_review", "confirmed", "reschedule_requested"]);
 
 export default function AdminBookingsPage() {
   const [dateFilter, setDateFilter] = useState("");
@@ -49,26 +65,41 @@ export default function AdminBookingsPage() {
           <p className="mt-0.5 text-sm text-muted-foreground">Manage and review all booking records</p>
         </div>
 
+        {/* Filters */}
         <div className="mb-6 flex flex-wrap items-center gap-3">
-          <Input type="date" value={dateFilter}
+          <Input
+            type="date"
+            value={dateFilter}
             onChange={(e) => { setDateFilter(e.target.value); setPage(1); }}
-            className="w-auto rounded-xl" />
-          <select value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="rounded-xl border border-border bg-card px-3 py-2 text-sm">
-            <option value="">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="cancelled">Cancelled</option>
-            <option value="completed">Completed</option>
-          </select>
+            className="w-auto rounded-xl"
+          />
+          <Select
+            value={statusFilter || "all"}
+            onValueChange={(v) => { setStatusFilter(v === "all" ? "" : v); setPage(1); }}
+          >
+            <SelectTrigger className="w-52 rounded-xl">
+              <SelectValue placeholder="All Statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              {STATUS_OPTIONS.map((s) => (
+                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {hasFilters && (
             <Button variant="ghost" size="sm" className="rounded-xl text-xs"
-              onClick={() => { setDateFilter(""); setStatusFilter(""); }}>
+              onClick={() => { setDateFilter(""); setStatusFilter(""); setPage(1); }}>
               <X className="mr-1 h-3 w-3" /> Clear
             </Button>
           )}
         </div>
+
+        {cancelBooking.error && (
+          <div className="mb-4 rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            {cancelBooking.error.message}
+          </div>
+        )}
 
         <Card className="rounded-2xl border-border/60">
           <CardContent className="pt-6">
@@ -115,26 +146,37 @@ export default function AdminBookingsPage() {
                             </TableCell>
                             <TableCell>{b.passengers}</TableCell>
                             <TableCell className="font-semibold">{b.totalPrice} THB</TableCell>
-                            <TableCell className="text-sm text-muted-foreground">{payment?.method || "N/A"}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground capitalize">
+                              {payment?.method?.replace(/_/g, " ") || "N/A"}
+                            </TableCell>
                             <TableCell>
-                              <Badge variant="outline" className={statusStyles[b.status] || ""}>{b.status}</Badge>
+                              <Badge variant="outline" className={statusStyles[b.status] || ""}>
+                                {b.status.replace(/_/g, " ")}
+                              </Badge>
                             </TableCell>
                             <TableCell className="text-right">
-                              {b.status !== "cancelled" && (
+                              {ACTIVE_STATUSES.has(b.status) && (
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
                                     <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10">
-                                      <Trash2 className="h-3.5 w-3.5" />
+                                      <Ban className="h-3.5 w-3.5" />
                                     </Button>
                                   </AlertDialogTrigger>
                                   <AlertDialogContent>
                                     <AlertDialogHeader>
                                       <AlertDialogTitle>Cancel this booking?</AlertDialogTitle>
-                                      <AlertDialogDescription>Seats will be released and payment refunded if applicable.</AlertDialogDescription>
+                                      <AlertDialogDescription>
+                                        The customer will be notified via LINE and in-app. Seats will be released.
+                                        Handle any refund manually with the customer.
+                                      </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                       <AlertDialogCancel>Keep</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => cancelBooking.mutate(b._id)}>Cancel Booking</AlertDialogAction>
+                                      <AlertDialogAction
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        onClick={() => cancelBooking.mutate(b._id)}>
+                                        Cancel Booking
+                                      </AlertDialogAction>
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
                                 </AlertDialog>
@@ -148,9 +190,11 @@ export default function AdminBookingsPage() {
                 </div>
                 {totalPages > 1 && (
                   <div className="mt-4 flex items-center justify-center gap-2">
-                    <Button variant="outline" size="sm" className="rounded-xl" disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</Button>
+                    <Button variant="outline" size="sm" className="rounded-xl"
+                      disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</Button>
                     <span className="text-xs text-muted-foreground">Page {page} of {totalPages}</span>
-                    <Button variant="outline" size="sm" className="rounded-xl" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>Next</Button>
+                    <Button variant="outline" size="sm" className="rounded-xl"
+                      disabled={page >= totalPages} onClick={() => setPage(page + 1)}>Next</Button>
                   </div>
                 )}
               </>

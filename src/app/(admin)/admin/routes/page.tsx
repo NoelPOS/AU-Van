@@ -92,6 +92,12 @@ export default function AdminRoutesPage() {
           </Card>
         )}
 
+        {deleteRoute.error && (
+          <div className="rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            {deleteRoute.error.message}
+          </div>
+        )}
+
         <Card className="rounded-2xl border-border/60">
           <CardContent className="pt-6">
             {routes.length === 0 ? <EmptyState title="No routes yet" /> : (

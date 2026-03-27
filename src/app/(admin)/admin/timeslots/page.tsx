@@ -341,6 +341,12 @@ export default function AdminTimeslotsPage() {
         </div>
 
         {/* Table */}
+        {cancelTimeslot.error && (
+          <div className="rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            {cancelTimeslot.error.message}
+          </div>
+        )}
+
         <Card className="rounded-2xl border-border/60">
           <CardContent className="pt-6">
             {timeslots.length === 0 ? (

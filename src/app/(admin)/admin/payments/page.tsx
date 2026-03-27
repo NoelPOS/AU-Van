@@ -11,6 +11,9 @@ import {
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { PageLoading } from "@/components/shared/loading";
 import { EmptyState } from "@/components/shared/empty-state";
 import { CheckCircle2, Clock3, Eye, XCircle } from "lucide-react";
@@ -111,21 +114,25 @@ export default function AdminPaymentsPage() {
         </div>
 
         <div className="mb-6 flex flex-wrap items-center gap-3">
-          <select
-            value={statusFilter}
-            onChange={(event) => {
-              setStatusFilter(event.target.value as "" | PaymentStatus);
+          <Select
+            value={statusFilter || "all"}
+            onValueChange={(v) => {
+              setStatusFilter((v === "all" ? "" : v) as "" | PaymentStatus);
               setPage(1);
             }}
-            className="rounded-xl border border-border bg-card px-3 py-2 text-sm"
           >
-            <option value="">All statuses</option>
-            <option value="pending_review">Pending review</option>
-            <option value="pending">Pending</option>
-            <option value="completed">Completed</option>
-            <option value="failed">Failed</option>
-            <option value="refunded">Refunded</option>
-          </select>
+            <SelectTrigger className="w-52 rounded-xl">
+              <SelectValue placeholder="All Statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="pending_review">Pending Review</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="failed">Failed</SelectItem>
+              <SelectItem value="refunded">Refunded</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <Card className="rounded-2xl border-border/60">

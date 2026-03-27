@@ -1,4 +1,5 @@
 import Route from "@/models/Route";
+import Booking from "@/models/Booking";
 import type { CreateRouteInput, UpdateRouteInput } from "@/validators/route.validator";
 
 class RouteService {
@@ -51,6 +52,15 @@ class RouteService {
   }
 
   async deleteRoute(id: string) {
+    const activeCount = await Booking.countDocuments({
+      routeId: id,
+      status: { $nin: ["cancelled", "completed"] },
+    });
+    if (activeCount > 0) {
+      throw new Error(
+        `Cannot deactivate — ${activeCount} active booking(s) exist on this route. Cancel them first.`
+      );
+    }
 
     const route = await Route.findByIdAndUpdate(id, { status: "inactive" }, { new: true });
     if (!route) throw new Error("Route not found");

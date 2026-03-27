@@ -1,4 +1,5 @@
 import Timeslot from "@/models/Timeslot";
+import Booking from "@/models/Booking";
 import { seatService } from "./seat.service";
 import type { CreateTimeslotInput, UpdateTimeslotInput, BulkCreateTimeslotInput } from "@/validators/timeslot.validator";
 
@@ -55,6 +56,15 @@ class TimeslotService {
   }
 
   async cancelTimeslot(id: string) {
+    const activeCount = await Booking.countDocuments({
+      timeslotId: id,
+      status: { $nin: ["cancelled", "completed"] },
+    });
+    if (activeCount > 0) {
+      throw new Error(
+        `Cannot cancel — ${activeCount} active booking(s) exist on this timeslot. Cancel each booking individually first.`
+      );
+    }
 
     const timeslot = await Timeslot.findByIdAndUpdate(id, { status: "cancelled" }, { new: true });
     if (!timeslot) throw new Error("Timeslot not found");
