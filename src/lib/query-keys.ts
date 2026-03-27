@@ -18,6 +18,7 @@ export const queryKeys = {
   timeslots: {
     all: ["timeslots"] as const,
     byRoute: (routeId: string, date?: string) => ["timeslots", routeId, date] as const,
+    adminList: (routeId: string, page: number) => ["timeslots", "admin", routeId, page] as const,
     detail: (id: string) => ["timeslots", id] as const,
   },
   seats: {
