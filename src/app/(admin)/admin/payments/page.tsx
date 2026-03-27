@@ -18,7 +18,7 @@ import { PageLoading } from "@/components/shared/loading";
 import { EmptyState } from "@/components/shared/empty-state";
 import { CheckCircle2, Clock3, Eye, XCircle } from "lucide-react";
 import { useAdminPayments, useReviewPayment } from "@/hooks/queries";
-import { PAYMENT_STATUS_VARIANT, fmtStatus as fmtStatus } from "@/constants/status-styles";
+import { PAYMENT_STATUS_VARIANT, formatStatus as fmtStatus } from "@/constants/status-styles";
 
 type PaymentStatus = "pending" | "pending_review" | "completed" | "failed" | "refunded";
 
