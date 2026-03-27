@@ -18,6 +18,7 @@ import { PageLoading } from "@/components/shared/loading";
 import { EmptyState } from "@/components/shared/empty-state";
 import { CheckCircle2, Clock3, Eye, XCircle } from "lucide-react";
 import { useAdminPayments, useReviewPayment } from "@/hooks/queries";
+import { PAYMENT_STATUS_VARIANT, fmtStatus as fmtStatus } from "@/constants/status-styles";
 
 type PaymentStatus = "pending" | "pending_review" | "completed" | "failed" | "refunded";
 
@@ -44,14 +45,6 @@ type PaymentItem = {
   reviewedBy?: { name?: string; email?: string };
 };
 
-const paymentStatusStyles: Record<PaymentStatus, string> = {
-  pending: "bg-amber-50 text-amber-700 border-amber-200",
-  pending_review: "bg-blue-50 text-blue-700 border-blue-200",
-  completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  failed: "bg-red-50 text-red-700 border-red-200",
-  refunded: "bg-slate-50 text-slate-700 border-slate-300",
-};
-
 function formatDateTime(value?: string) {
   if (!value) return "-";
   const date = new Date(value);
@@ -59,9 +52,6 @@ function formatDateTime(value?: string) {
   return date.toLocaleString();
 }
 
-function formatStatus(value: string) {
-  return value.replaceAll("_", " ");
-}
 
 export default function AdminPaymentsPage() {
   const [page, setPage] = useState(1);
@@ -175,7 +165,7 @@ export default function AdminPaymentsPage() {
                                 {payment.bookingId?.bookingCode || payment.bookingId?._id || "N/A"}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                Booking {formatStatus(payment.bookingId?.status || "unknown")}
+                                Booking {fmtStatus(payment.bookingId?.status || "unknown")}
                               </p>
                             </div>
                           </TableCell>
@@ -200,8 +190,8 @@ export default function AdminPaymentsPage() {
                             {formatDateTime(payment.proofSubmittedAt || payment.createdAt)}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className={paymentStatusStyles[payment.status] || ""}>
-                              {formatStatus(payment.status)}
+                            <Badge variant={PAYMENT_STATUS_VARIANT[payment.status] ?? "outline"}>
+                              {fmtStatus(payment.status)}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">

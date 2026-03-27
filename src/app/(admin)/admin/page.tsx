@@ -10,13 +10,7 @@ import {
   BookOpen, MapPin, Users, CreditCard, ArrowRight, TrendingUp,
 } from "lucide-react";
 import { useAdminBookings } from "@/hooks/queries";
-
-const statusStyles: Record<string, string> = {
-  pending: "bg-amber-50 text-amber-700 border-amber-200",
-  confirmed: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  cancelled: "bg-red-50 text-red-600 border-red-200",
-  completed: "bg-primary/5 text-primary border-primary/20",
-};
+import { BOOKING_STATUS_VARIANT, formatStatus } from "@/constants/status-styles";
 
 export default function AdminDashboard() {
   const { data, isLoading } = useAdminBookings({ limit: 10, all: true });
@@ -119,7 +113,7 @@ export default function AdminDashboard() {
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-semibold text-foreground">{b.totalPrice} THB</span>
-                        <Badge variant="outline" className={statusStyles[b.status] || ""}>{b.status}</Badge>
+                        <Badge variant={BOOKING_STATUS_VARIANT[b.status] ?? "outline"}>{formatStatus(b.status)}</Badge>
                       </div>
                     </div>
                   );

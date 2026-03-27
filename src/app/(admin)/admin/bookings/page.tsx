@@ -20,6 +20,7 @@ import { PageLoading } from "@/components/shared/loading";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Ban, X } from "lucide-react";
 import { useAdminBookings, useAdminCancelBooking } from "@/hooks/queries";
+import { BOOKING_STATUS_VARIANT, formatStatus } from "@/constants/status-styles";
 
 const STATUS_OPTIONS = [
   { value: "pending_payment",       label: "Pending Payment" },
@@ -29,15 +30,6 @@ const STATUS_OPTIONS = [
   { value: "completed",             label: "Completed" },
   { value: "cancelled",             label: "Cancelled" },
 ];
-
-const statusStyles: Record<string, string> = {
-  pending_payment:      "bg-amber-50 text-amber-700 border-amber-200",
-  payment_under_review: "bg-blue-50 text-blue-700 border-blue-200",
-  confirmed:            "bg-emerald-50 text-emerald-700 border-emerald-200",
-  reschedule_requested: "bg-purple-50 text-purple-700 border-purple-200",
-  completed:            "bg-primary/5 text-primary border-primary/20",
-  cancelled:            "bg-red-50 text-red-600 border-red-200",
-};
 
 const ACTIVE_STATUSES = new Set(["pending_payment", "payment_under_review", "confirmed", "reschedule_requested"]);
 
@@ -150,8 +142,8 @@ export default function AdminBookingsPage() {
                               {payment?.method?.replace(/_/g, " ") || "N/A"}
                             </TableCell>
                             <TableCell>
-                              <Badge variant="outline" className={statusStyles[b.status] || ""}>
-                                {b.status.replace(/_/g, " ")}
+                              <Badge variant={BOOKING_STATUS_VARIANT[b.status] ?? "outline"}>
+                                {formatStatus(b.status)}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-right">

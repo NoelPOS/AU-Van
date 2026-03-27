@@ -24,6 +24,7 @@ import {
   useCancelTimeslot,
   useBulkCreateTimeslots,
 } from "@/hooks/queries";
+import { TIMESLOT_STATUS_VARIANT, formatStatus } from "@/constants/status-styles";
 import { cn } from "@/libs/utils";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -376,10 +377,8 @@ export default function AdminTimeslotsPage() {
                           {ts.totalSeats - ts.bookedSeats}
                         </TableCell>
                         <TableCell>
-                          <Badge
-                            variant={ts.status === "active" ? "outline" : "secondary"}
-                            className={ts.status === "active" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : ""}>
-                            {ts.status}
+                          <Badge variant={TIMESLOT_STATUS_VARIANT[ts.status] ?? "outline"}>
+                            {formatStatus(ts.status)}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
