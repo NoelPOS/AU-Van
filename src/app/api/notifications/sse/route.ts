@@ -3,6 +3,8 @@ import { authOptions } from "@/libs/auth";
 import { sseManager } from "@/lib/sse";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -12,6 +14,7 @@ export async function GET() {
 
   const userId = session.user._id;
   const clientId = `${userId}-${Date.now()}`;
+  let heartbeat: ReturnType<typeof setInterval> | null = null;
 
   const stream = new ReadableStream({
     start(controller) {
@@ -26,16 +29,23 @@ export async function GET() {
       sseManager.addClient(clientId, userId, controller);
 
       // Heartbeat every 30s to keep connection alive
-      const heartbeat = setInterval(() => {
+      heartbeat = setInterval(() => {
         try {
           controller.enqueue(encoder.encode(": heartbeat\n\n"));
         } catch {
-          clearInterval(heartbeat);
+          if (heartbeat) {
+            clearInterval(heartbeat);
+            heartbeat = null;
+          }
           sseManager.removeClient(clientId);
         }
       }, 30000);
     },
     cancel() {
+      if (heartbeat) {
+        clearInterval(heartbeat);
+        heartbeat = null;
+      }
       sseManager.removeClient(clientId);
     },
   });

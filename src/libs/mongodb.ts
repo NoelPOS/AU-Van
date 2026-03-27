@@ -1,4 +1,5 @@
 import mongoose, { Mongoose } from 'mongoose'
+import "@/models";
 
 const MONGODB_URI: string = process.env.MONGODB_URI || ''
 
