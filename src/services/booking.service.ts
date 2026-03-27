@@ -10,11 +10,43 @@ import { reminderService } from "@/services/reminder.service";
 import type { PaymentMethod } from "@/types";
 import type { CreateBookingInput } from "@/validators/booking.validator";
 
+const FALLBACK_ROUTE_DURATION_MINUTES = Number(process.env.DEFAULT_ROUTE_DURATION_MINUTES) || 120;
+
 type SubmitPaymentProofInput = {
   proofImageUrl: string;
   proofReference: string;
   paidAt?: string;
 };
+
+type TripRouteLite = {
+  _id: mongoose.Types.ObjectId;
+  from: string;
+  to: string;
+  duration?: number;
+};
+
+type TripTimeslotLite = {
+  _id: mongoose.Types.ObjectId;
+  date: string;
+  time: string;
+};
+
+export class BookingConflictError extends Error {
+  readonly statusCode = 409;
+  readonly details: {
+    conflictBookingId: string;
+    bookingCode?: string;
+    route: string;
+    date: string;
+    time: string;
+  };
+
+  constructor(message: string, details: BookingConflictError["details"]) {
+    super(message);
+    this.name = "BookingConflictError";
+    this.details = details;
+  }
+}
 
 function parseTimeslotDateTime(date: string, time: string): Date {
   const hhmm = /^\d{2}:\d{2}$/.test(time) ? time : "00:00";
@@ -47,6 +79,66 @@ class BookingService {
     return BookingService.instance;
   }
 
+  private buildTripWindow(route: Pick<TripRouteLite, "duration">, timeslot: TripTimeslotLite) {
+    const start = parseTimeslotDateTime(timeslot.date, timeslot.time);
+    const durationMinutes =
+      typeof route.duration === "number" && route.duration > 0
+        ? route.duration
+        : FALLBACK_ROUTE_DURATION_MINUTES;
+    const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
+    return { start, end };
+  }
+
+  private hasWindowOverlap(
+    first: { start: Date; end: Date },
+    second: { start: Date; end: Date }
+  ) {
+    return first.start < second.end && second.start < first.end;
+  }
+
+  private async assertNoOverlappingActiveBooking(
+    userId: string,
+    targetRoute: TripRouteLite,
+    targetTimeslot: TripTimeslotLite,
+    excludeBookingId?: string
+  ) {
+    const targetWindow = this.buildTripWindow(targetRoute, targetTimeslot);
+
+    const query: Record<string, unknown> = {
+      userId,
+      status: { $nin: ["cancelled", "completed"] },
+    };
+
+    if (excludeBookingId) {
+      query._id = { $ne: excludeBookingId };
+    }
+
+    const activeBookings = await Booking.find(query)
+      .populate("routeId", "from to duration")
+      .populate("timeslotId", "date time")
+      .select("_id bookingCode routeId timeslotId")
+      .lean();
+
+    for (const activeBooking of activeBookings) {
+      const route = activeBooking.routeId as unknown as TripRouteLite | undefined;
+      const timeslot = activeBooking.timeslotId as unknown as TripTimeslotLite | undefined;
+      if (!route || !timeslot) continue;
+
+      const existingWindow = this.buildTripWindow(route, timeslot);
+      if (!this.hasWindowOverlap(targetWindow, existingWindow)) continue;
+
+      const routeText = `${route.from} -> ${route.to}`;
+      const message = `Booking conflict: You already have a booking on ${timeslot.date} at ${timeslot.time} for ${routeText}.`;
+      throw new BookingConflictError(message, {
+        conflictBookingId: String(activeBooking._id),
+        bookingCode: activeBooking.bookingCode,
+        route: routeText,
+        date: timeslot.date,
+        time: timeslot.time,
+      });
+    }
+  }
+
   async createBooking(userId: string, input: CreateBookingInput) {
 
     const route = await Route.findById(input.routeId);
@@ -58,6 +150,15 @@ class BookingService {
     if (!timeslot || timeslot.status !== "active") {
       throw new Error("Timeslot not available");
     }
+    if (String(timeslot.routeId) !== String(route._id)) {
+      throw new Error("Timeslot does not belong to the selected route");
+    }
+
+    await this.assertNoOverlappingActiveBooking(
+      userId,
+      route as unknown as TripRouteLite,
+      timeslot as unknown as TripTimeslotLite
+    );
 
     const totalPrice = route.price * input.seatIds.length;
 
@@ -108,10 +209,12 @@ class BookingService {
 
     await eventBus.emit(Events.BOOKING_CREATED, {
       _id: booking._id,
+      bookingCode: booking.bookingCode,
       userId,
       passengerName: input.passengerName,
       totalPrice,
-      route: `${route.from} -> ${route.to}`,
+      routeFrom: route.from,
+      routeTo: route.to,
       date: timeslot.date,
       time: timeslot.time,
     });
@@ -198,6 +301,21 @@ class BookingService {
     if (!nextTimeslot || nextTimeslot.status !== "active") {
       throw new Error("Target timeslot is not available");
     }
+
+    const currentRoute = await Route.findById(booking.routeId);
+    if (!currentRoute) throw new Error("Route not found");
+
+    const targetRouteId = String(nextTimeslot.routeId);
+    if (targetRouteId !== String(currentRoute._id)) {
+      throw new Error("Reschedule target must stay on the same route");
+    }
+
+    await this.assertNoOverlappingActiveBooking(
+      userId,
+      currentRoute as unknown as TripRouteLite,
+      nextTimeslot as unknown as TripTimeslotLite,
+      bookingId
+    );
 
     await seatService.lockSeats(input.timeslotId, input.seatIds, userId);
     await seatService.confirmSeats(input.seatIds, userId);
@@ -301,10 +419,20 @@ class BookingService {
 
     await reminderService.cancelForBooking(String(booking._id));
 
+    const [route, timeslot] = await Promise.all([
+      Route.findById(booking.routeId).select("from to").lean(),
+      Timeslot.findById(booking.timeslotId).select("date time").lean(),
+    ]);
+
     await eventBus.emit(Events.BOOKING_CANCELLED, {
       _id: booking._id,
+      bookingCode: booking.bookingCode,
       userId: String(booking.userId),
       passengerName: booking.passengerName,
+      routeFrom: route?.from,
+      routeTo: route?.to,
+      date: timeslot?.date,
+      time: timeslot?.time,
     });
 
     return booking;

@@ -5,8 +5,10 @@ declare module "next-auth" {
     user: {
       _id: string;
       name: string;
-      email: string;
+      email?: string | null;
       phone?: string;
+      defaultPickupLocation?: string;
+      profileImageUrl?: string;
       image?: string;
       isAdmin: boolean;
     };
@@ -15,8 +17,10 @@ declare module "next-auth" {
   interface User {
     _id: string;
     name: string;
-    email: string;
+    email?: string | null;
     phone?: string;
+    defaultPickupLocation?: string;
+    profileImageUrl?: string;
     image?: string;
     isAdmin: boolean;
   }
@@ -26,6 +30,8 @@ declare module "next-auth/jwt" {
   interface JWT {
     _id: string;
     phone?: string;
+    defaultPickupLocation?: string;
+    profileImageUrl?: string;
     isAdmin: boolean;
   }
 }

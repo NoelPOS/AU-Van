@@ -30,6 +30,34 @@ class UserService {
       .lean();
   }
 
+  async updateProfileImage(userId: string, image: { url: string; key: string }) {
+    const user = await User.findById(userId);
+    if (!user) throw new Error("User not found");
+
+    const previousKey = user.profileImageKey;
+    user.profileImageUrl = image.url;
+    user.profileImageKey = image.key;
+    user.image = image.url;
+    await user.save();
+
+    const sanitized = await User.findById(userId).select("-password").lean();
+    return { user: sanitized, previousKey };
+  }
+
+  async removeProfileImage(userId: string) {
+    const user = await User.findById(userId);
+    if (!user) throw new Error("User not found");
+
+    const previousKey = user.profileImageKey;
+    user.profileImageUrl = undefined;
+    user.profileImageKey = undefined;
+    user.image = user.pictureUrl || undefined;
+    await user.save();
+
+    const sanitized = await User.findById(userId).select("-password").lean();
+    return { user: sanitized, previousKey };
+  }
+
   async changePassword(userId: string, input: ChangePasswordInput) {
 
     const user = await User.findById(userId);

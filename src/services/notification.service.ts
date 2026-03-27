@@ -21,51 +21,171 @@ class NotificationService {
     return NotificationService.instance;
   }
 
+  private buildTripSummary(input: {
+    routeFrom?: string;
+    routeTo?: string;
+    date?: string;
+    time?: string;
+  }) {
+    const routeText =
+      input.routeFrom && input.routeTo ? `${input.routeFrom} -> ${input.routeTo}` : "your route";
+    const dateText = input.date || "the scheduled date";
+    const timeText = input.time || "the scheduled time";
+    return { routeText, dateText, timeText };
+  }
+
+  private formatPaymentMethod(method: string) {
+    return method.replace(/_/g, " ");
+  }
+
   private registerEventListeners() {
     eventBus.on(Events.BOOKING_CREATED, async (booking: unknown) => {
       const b = booking as {
         userId: string;
         _id: string;
+        bookingCode?: string;
         passengerName: string;
         totalPrice: number;
+        routeFrom?: string;
+        routeTo?: string;
+        date?: string;
+        time?: string;
       };
+      const trip = this.buildTripSummary(b);
+      const bookingRef = b.bookingCode || String(b._id).slice(-6);
+
       await this.notifyUser(b.userId, {
         type: "booking_confirmed",
         title: "Booking Confirmed",
-        message: `Your booking #${String(b._id).slice(-6)} has been confirmed.`,
-        data: { bookingId: String(b._id), totalPrice: b.totalPrice },
+        message: `Your booking ${bookingRef} on ${trip.dateText} at ${trip.timeText} for ${trip.routeText} is confirmed.`,
+        data: {
+          bookingId: String(b._id),
+          bookingCode: b.bookingCode,
+          totalPrice: b.totalPrice,
+          routeFrom: b.routeFrom,
+          routeTo: b.routeTo,
+          date: b.date,
+          time: b.time,
+          action: "confirmed",
+        },
       });
       await this.notifyAdmins({
         type: "admin_new_booking",
         title: "New Booking",
-        message: `${b.passengerName} made a new booking #${String(b._id).slice(-6)}.`,
-        data: { bookingId: String(b._id) },
+        message: `${b.passengerName} created booking ${bookingRef} on ${trip.dateText} at ${trip.timeText} for ${trip.routeText}.`,
+        data: {
+          bookingId: String(b._id),
+          bookingCode: b.bookingCode,
+          routeFrom: b.routeFrom,
+          routeTo: b.routeTo,
+          date: b.date,
+          time: b.time,
+        },
       });
     });
 
     eventBus.on(Events.BOOKING_CANCELLED, async (booking: unknown) => {
-      const b = booking as { userId: string; _id: string; passengerName: string };
+      const b = booking as {
+        userId: string;
+        _id: string;
+        bookingCode?: string;
+        passengerName: string;
+        routeFrom?: string;
+        routeTo?: string;
+        date?: string;
+        time?: string;
+      };
+      const trip = this.buildTripSummary(b);
+      const bookingRef = b.bookingCode || String(b._id).slice(-6);
+
       await this.notifyUser(b.userId, {
         type: "booking_cancelled",
         title: "Booking Cancelled",
-        message: `Your booking #${String(b._id).slice(-6)} has been cancelled.`,
-        data: { bookingId: String(b._id) },
+        message: `Your booking ${bookingRef} on ${trip.dateText} at ${trip.timeText} for ${trip.routeText} was cancelled.`,
+        data: {
+          bookingId: String(b._id),
+          bookingCode: b.bookingCode,
+          routeFrom: b.routeFrom,
+          routeTo: b.routeTo,
+          date: b.date,
+          time: b.time,
+          action: "cancelled",
+        },
       });
       await this.notifyAdmins({
         type: "admin_cancellation",
         title: "Booking Cancelled",
-        message: `${b.passengerName} cancelled booking #${String(b._id).slice(-6)}.`,
-        data: { bookingId: String(b._id) },
+        message: `${b.passengerName} cancelled booking ${bookingRef} on ${trip.dateText} at ${trip.timeText} for ${trip.routeText}.`,
+        data: {
+          bookingId: String(b._id),
+          bookingCode: b.bookingCode,
+          routeFrom: b.routeFrom,
+          routeTo: b.routeTo,
+          date: b.date,
+          time: b.time,
+        },
       });
     });
 
     eventBus.on(Events.PAYMENT_COMPLETED, async (payment: unknown) => {
-      const p = payment as { userId: string; amount: number; method: string };
+      const p = payment as {
+        userId: string;
+        bookingId: string;
+        bookingCode?: string;
+        amount: number;
+        method: string;
+        routeFrom?: string;
+        routeTo?: string;
+        date?: string;
+        time?: string;
+      };
+      const trip = this.buildTripSummary(p);
       await this.notifyUser(p.userId, {
         type: "payment_received",
         title: "Payment Received",
-        message: `Your payment of ${p.amount} THB via ${p.method} has been received.`,
-        data: { amount: p.amount, method: p.method },
+        message: `Payment received for your ${trip.routeText} trip on ${trip.dateText} at ${trip.timeText}. Amount: ${p.amount} THB via ${this.formatPaymentMethod(p.method)}.`,
+        data: {
+          bookingId: p.bookingId,
+          bookingCode: p.bookingCode,
+          amount: p.amount,
+          method: p.method,
+          routeFrom: p.routeFrom,
+          routeTo: p.routeTo,
+          date: p.date,
+          time: p.time,
+          action: "payment_received",
+        },
+      });
+    });
+
+    eventBus.on(Events.PAYMENT_FAILED, async (payment: unknown) => {
+      const p = payment as {
+        userId: string;
+        bookingId: string;
+        bookingCode?: string;
+        amount: number;
+        method: string;
+        routeFrom?: string;
+        routeTo?: string;
+        date?: string;
+        time?: string;
+      };
+      const trip = this.buildTripSummary(p);
+      await this.notifyUser(p.userId, {
+        type: "payment_failed",
+        title: "Payment Needs Attention",
+        message: `Payment verification failed for your ${trip.routeText} trip on ${trip.dateText} at ${trip.timeText}. Please upload proof again.`,
+        data: {
+          bookingId: p.bookingId,
+          bookingCode: p.bookingCode,
+          amount: p.amount,
+          method: p.method,
+          routeFrom: p.routeFrom,
+          routeTo: p.routeTo,
+          date: p.date,
+          time: p.time,
+          action: "payment_failed",
+        },
       });
     });
   }

@@ -5,13 +5,21 @@ type LinePushResult = {
   error?: string;
 };
 
+export type LinePushMessage =
+  | { type: "text"; text: string }
+  | {
+      type: "flex";
+      altText: string;
+      contents: Record<string, unknown>;
+    };
+
 function getLineChannelAccessToken(): string | null {
   return process.env.LINE_CHANNEL_ACCESS_TOKEN || null;
 }
 
 export async function sendLinePushMessage(
   to: string,
-  messages: Array<{ type: "text"; text: string }>
+  messages: LinePushMessage[]
 ): Promise<LinePushResult> {
   const token = getLineChannelAccessToken();
   if (!token) {

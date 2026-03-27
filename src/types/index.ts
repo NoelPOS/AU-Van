@@ -1,7 +1,7 @@
 // User
 export interface IUser {
   _id: string;
-  email: string;
+  email?: string;
   password: string;
   lineUserId?: string;
   authProvider?: "local" | "google" | "line";
@@ -10,6 +10,9 @@ export interface IUser {
   lineLinkedAt?: Date;
   name: string;
   phone?: string;
+  defaultPickupLocation?: string;
+  profileImageUrl?: string;
+  profileImageKey?: string;
   image?: string;
   isAdmin: boolean;
   createdAt: Date;

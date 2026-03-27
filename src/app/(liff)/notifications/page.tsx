@@ -2,13 +2,13 @@
 
 import { useMemo } from "react";
 import { format, isToday, isYesterday } from "date-fns";
-import { Bell, Check, CheckCheck } from "lucide-react";
+import { Bell, Check, CheckCheck, Loader2 } from "lucide-react";
 import { useNotifications } from "@/context/notification.context";
 import { LiffPageLoading } from "@/components/shared/loading";
 import { LiffPageHeader } from "@/components/layout/liff-page-header";
 
 export default function NotificationsPage() {
-  const { notifications, loading, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, loading, markAllLoading, markAsRead, markAllAsRead } = useNotifications();
 
   const groups = useMemo(() => {
     const grouped = { today: [] as typeof notifications, yesterday: [] as typeof notifications, earlier: [] as typeof notifications };
@@ -35,10 +35,12 @@ export default function NotificationsPage() {
         rightSlot={
           <button
             onClick={markAllAsRead}
+            disabled={markAllLoading}
             className="rounded-md border border-[#ccd4f3] bg-white px-2 py-1 text-[11px] font-medium text-[#3f53c9]"
           >
             <span className="inline-flex items-center gap-1">
-              <CheckCheck className="h-3 w-3" /> Read all
+              {markAllLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCheck className="h-3 w-3" />}
+              {markAllLoading ? "Updating..." : "Read all"}
             </span>
           </button>
         }

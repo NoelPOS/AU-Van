@@ -9,6 +9,7 @@ interface NotificationContextType {
   notifications: INotification[];
   unreadCount: number;
   loading: boolean;
+  markAllLoading: boolean;
   refresh: () => Promise<void>;
   markAsRead: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
@@ -19,6 +20,7 @@ const NotificationContext = createContext<NotificationContextType>({
   notifications: [],
   unreadCount: 0,
   loading: false,
+  markAllLoading: false,
   refresh: async () => {},
   markAsRead: async () => {},
   markAllAsRead: async () => {},
@@ -30,6 +32,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<INotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [markAllLoading, setMarkAllLoading] = useState(false);
 
   const fetchNotifications = useCallback(async () => {
     if (!session?.user) return;
@@ -74,9 +77,24 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   };
 
   const markAllAsRead = async () => {
-    await fetch("/api/notifications", { method: "PUT" });
+    if (markAllLoading) return;
+
+    const snapshotNotifications = notifications;
+    const snapshotUnreadCount = unreadCount;
+
+    setMarkAllLoading(true);
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     setUnreadCount(0);
+
+    try {
+      const res = await fetch("/api/notifications", { method: "PUT" });
+      if (!res.ok) throw new Error("Failed to mark all notifications as read");
+    } catch {
+      setNotifications(snapshotNotifications);
+      setUnreadCount(snapshotUnreadCount);
+    } finally {
+      setMarkAllLoading(false);
+    }
   };
 
   const deleteNotification = async (id: string) => {
@@ -90,6 +108,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         notifications,
         unreadCount,
         loading,
+        markAllLoading,
         refresh: fetchNotifications,
         markAsRead,
         markAllAsRead,

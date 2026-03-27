@@ -29,7 +29,6 @@ export const authOptions: NextAuthOptions = {
 
         const lineUserId = verified.sub;
         const verifiedEmail = verified.email?.toLowerCase();
-        const fallbackEmail = `line_${lineUserId}@line.user`;
         const profileName =
           verified.name ||
           credentials?.displayName ||
@@ -39,15 +38,14 @@ export const authOptions: NextAuthOptions = {
           credentials?.avatar ||
           "";
 
-        const query = verifiedEmail
-          ? { $or: [{ lineUserId }, { email: verifiedEmail }] }
-          : { lineUserId };
-
-        let user = await User.findOne(query).select("+password");
+        let user = await User.findOne({ lineUserId }).select("+password");
+        if (!user && verifiedEmail) {
+          user = await User.findOne({ email: verifiedEmail }).select("+password");
+        }
 
         if (!user) {
           user = await User.create({
-            email: verifiedEmail || fallbackEmail,
+            email: verifiedEmail,
             password: await bcrypt.hash(crypto.randomUUID(), 10),
             lineUserId,
             authProvider: "line",
@@ -62,6 +60,10 @@ export const authOptions: NextAuthOptions = {
           let changed = false;
           if (!user.lineUserId) {
             user.lineUserId = lineUserId;
+            changed = true;
+          }
+          if (!user.email && verifiedEmail) {
+            user.email = verifiedEmail;
             changed = true;
           }
           if (user.authProvider !== "line" && !user.isAdmin) {
@@ -95,10 +97,12 @@ export const authOptions: NextAuthOptions = {
           id: String(user._id),
           _id: String(user._id),
           name: user.name,
-          email: user.email,
+          email: user.email || null,
           phone: user.phone,
+          defaultPickupLocation: user.defaultPickupLocation,
+          profileImageUrl: user.profileImageUrl,
           isAdmin: user.isAdmin,
-          image: user.image,
+          image: user.profileImageUrl || user.image,
         };
       },
     }),
@@ -127,8 +131,10 @@ export const authOptions: NextAuthOptions = {
           id: String(user._id),
           _id: String(user._id),
           name: user.name,
-          email: user.email,
+          email: user.email || null,
           phone: user.phone,
+          defaultPickupLocation: user.defaultPickupLocation,
+          profileImageUrl: user.profileImageUrl,
           isAdmin: user.isAdmin,
         };
       },
@@ -160,6 +166,8 @@ export const authOptions: NextAuthOptions = {
           user._id = String(newUser._id);
           user.isAdmin = false;
           user.phone = "";
+          user.defaultPickupLocation = newUser.defaultPickupLocation;
+          user.profileImageUrl = newUser.profileImageUrl;
         } else {
           if (existingUser.authProvider === "local") {
             existingUser.authProvider = "google";
@@ -170,6 +178,8 @@ export const authOptions: NextAuthOptions = {
           user._id = String(existingUser._id);
           user.isAdmin = existingUser.isAdmin;
           user.phone = existingUser.phone;
+          user.defaultPickupLocation = existingUser.defaultPickupLocation;
+          user.profileImageUrl = existingUser.profileImageUrl;
         }
       }
       return true;
@@ -178,11 +188,19 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token._id = user._id || user.id;
         token.phone = user.phone;
+        token.defaultPickupLocation = user.defaultPickupLocation;
+        token.profileImageUrl = user.profileImageUrl;
         token.isAdmin = user.isAdmin || false;
       }
       if (trigger === "update" && session) {
         if (session.name) token.name = session.name;
         if (session.phone !== undefined) token.phone = session.phone;
+        if (session.defaultPickupLocation !== undefined) {
+          token.defaultPickupLocation = session.defaultPickupLocation;
+        }
+        if (session.profileImageUrl !== undefined) {
+          token.profileImageUrl = session.profileImageUrl;
+        }
       }
       return token;
     },
@@ -194,6 +212,8 @@ export const authOptions: NextAuthOptions = {
           _id: token._id,
           name: token.name,
           phone: token.phone,
+          defaultPickupLocation: token.defaultPickupLocation,
+          profileImageUrl: token.profileImageUrl,
           isAdmin: token.isAdmin,
         },
       };

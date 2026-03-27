@@ -185,19 +185,24 @@ export function LiffAuthGate({ children }: { children: React.ReactNode }) {
         </p>
 
         {error && (
-          <p className="mt-2 rounded-lg border border-red-100 bg-red-50 px-2 py-1.5 text-[11px] text-red-600">
-            {error}
-          </p>
-        )}
+          <>
+            <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1.5 text-[11px] text-amber-700">
+              {error}
+            </p>
 
-        <Button onClick={reloginWithLine} className="mt-4 h-9 w-full bg-[#3f53c9] text-[12px] font-semibold hover:bg-[#3447b4]">
-          Retry LINE Login
-        </Button>
-        <div className="mt-2">
-          <Button asChild variant="ghost" className="h-7 text-[11px] text-[#5d6ec6] hover:text-[#2f3f9f]">
-            <Link href="/auth">Use web login (fallback/admin)</Link>
-          </Button>
-        </div>
+            <Button
+              onClick={reloginWithLine}
+              className="mt-4 h-9 w-full bg-[#3f53c9] text-[12px] font-semibold hover:bg-[#3447b4]"
+            >
+              Retry LINE Login
+            </Button>
+            <div className="mt-2">
+              <Button asChild variant="ghost" className="h-7 text-[11px] text-[#5d6ec6] hover:text-[#2f3f9f]">
+                <Link href="/auth">Use web login (fallback/admin)</Link>
+              </Button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

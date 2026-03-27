@@ -2,10 +2,10 @@
 
 import { useNotifications } from "@/context/notification.context";
 import { formatDistanceToNow } from "date-fns";
-import { Check, CheckCheck, Trash2, X } from "lucide-react";
+import { Check, CheckCheck, Loader2, Trash2, X } from "lucide-react";
 
 export function NotificationList({ onClose }: { onClose?: () => void }) {
-  const { notifications, loading, markAsRead, markAllAsRead, deleteNotification } =
+  const { notifications, loading, markAllLoading, markAsRead, markAllAsRead, deleteNotification } =
     useNotifications();
 
   return (
@@ -15,10 +15,12 @@ export function NotificationList({ onClose }: { onClose?: () => void }) {
         <div className="flex items-center gap-2">
           <button
             onClick={markAllAsRead}
-            className="text-xs text-blue-600 hover:underline"
+            disabled={markAllLoading}
+            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline disabled:cursor-not-allowed disabled:text-blue-400"
             title="Mark all as read"
           >
-            <CheckCheck className="h-4 w-4" />
+            {markAllLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCheck className="h-4 w-4" />}
+            {markAllLoading ? "Updating..." : "Read all"}
           </button>
           {onClose && (
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600">

@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-guard";
-import { bookingService } from "@/services/booking.service";
+import { BookingConflictError, bookingService } from "@/services/booking.service";
 import {
   successResponse,
   errorResponse,
@@ -36,6 +36,12 @@ export async function POST(
 
     return successResponse(booking, "Reschedule request created");
   } catch (err) {
+    if (err instanceof BookingConflictError) {
+      return NextResponse.json(
+        { success: false, error: err.message, data: err.details },
+        { status: err.statusCode }
+      );
+    }
     if (err instanceof Error) return errorResponse(err.message);
     return serverErrorResponse(err);
   }

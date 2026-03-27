@@ -11,7 +11,8 @@
     "test:integration": "vitest run tests/integration",
     "seed:admin": "node scripts/seed-admin.mjs",
     "seed:mock": "node scripts/seed-mock-data.mjs",
-    "seed:mock:reset": "node scripts/seed-mock-data.mjs --reset"
+    "seed:mock:reset": "node scripts/seed-mock-data.mjs --reset",
+    "migrate:line-email": "node scripts/migrate-line-synthetic-email.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1017.0",

@@ -16,8 +16,28 @@ export function useMe() {
 export function useUpdateProfile() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: { name?: string; phone?: string } | { oldPassword: string; newPassword: string }) =>
+    mutationFn: (body: { name?: string; phone?: string; defaultPickupLocation?: string } | { oldPassword: string; newPassword: string }) =>
       api.put<IUser>("/api/users/me", body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.me });
+    },
+  });
+}
+
+export function useUploadProfileImage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (formData: FormData) => api.upload<IUser>("/api/users/me/profile-image", formData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.me });
+    },
+  });
+}
+
+export function useDeleteProfileImage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.del<IUser>("/api/users/me/profile-image"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.users.me });
     },

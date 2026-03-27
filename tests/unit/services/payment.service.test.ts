@@ -12,10 +12,19 @@ vi.mock("@/models/Payment", () => {
 
 vi.mock("@/models/Booking", () => {
   const mockBooking = {
+    findById: vi.fn(),
     findByIdAndUpdate: vi.fn(),
   };
   return { default: mockBooking };
 });
+
+vi.mock("@/models/Route", () => ({
+  default: { findById: vi.fn() },
+}));
+
+vi.mock("@/models/Timeslot", () => ({
+  default: { findById: vi.fn() },
+}));
 
 vi.mock("@/lib/events", () => ({
   eventBus: { emit: vi.fn().mockResolvedValue(undefined) },
@@ -38,6 +47,8 @@ vi.mock("@/services/reminder.service", () => ({
 
 import Payment from "@/models/Payment";
 import Booking from "@/models/Booking";
+import Route from "@/models/Route";
+import Timeslot from "@/models/Timeslot";
 import { eventBus, Events } from "@/lib/events";
 import { auditLogService } from "@/services/audit-log.service";
 import { reminderService } from "@/services/reminder.service";
@@ -134,6 +145,25 @@ describe("PaymentService", () => {
       const mockPayment = createMockPayment();
       vi.mocked(Payment.findById).mockResolvedValue(mockPayment as never);
       vi.mocked(Booking.findByIdAndUpdate).mockResolvedValue(null as never);
+      vi.mocked(Booking.findById).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          lean: vi.fn().mockResolvedValue({
+            bookingCode: "AUV-001",
+            routeId: "route-1",
+            timeslotId: "timeslot-1",
+          }),
+        }),
+      } as never);
+      vi.mocked(Route.findById).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          lean: vi.fn().mockResolvedValue({ from: "AU", to: "Mega Bangna" }),
+        }),
+      } as never);
+      vi.mocked(Timeslot.findById).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          lean: vi.fn().mockResolvedValue({ date: "2026-03-27", time: "08:00" }),
+        }),
+      } as never);
 
       await paymentService.reviewPayment(PAYMENT_ID, ADMIN_ID, {
         status: "completed",
@@ -147,11 +177,14 @@ describe("PaymentService", () => {
 
       expect(Booking.findByIdAndUpdate).toHaveBeenCalledWith(BOOKING_ID, { status: "confirmed" });
       expect(reminderService.scheduleForBooking).toHaveBeenCalledWith(BOOKING_ID);
-      expect(eventBus.emit).toHaveBeenCalledWith(Events.PAYMENT_COMPLETED, {
-        userId: USER_ID,
-        amount: 500,
-        method: "promptpay",
-      });
+      expect(eventBus.emit).toHaveBeenCalledWith(
+        Events.PAYMENT_COMPLETED,
+        expect.objectContaining({
+          userId: USER_ID,
+          amount: 500,
+          method: "promptpay",
+        })
+      );
       expect(auditLogService.create).toHaveBeenCalledWith(
         expect.objectContaining({
           actorId: ADMIN_ID,
@@ -165,6 +198,25 @@ describe("PaymentService", () => {
       const mockPayment = createMockPayment();
       vi.mocked(Payment.findById).mockResolvedValue(mockPayment as never);
       vi.mocked(Booking.findByIdAndUpdate).mockResolvedValue(null as never);
+      vi.mocked(Booking.findById).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          lean: vi.fn().mockResolvedValue({
+            bookingCode: "AUV-001",
+            routeId: "route-1",
+            timeslotId: "timeslot-1",
+          }),
+        }),
+      } as never);
+      vi.mocked(Route.findById).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          lean: vi.fn().mockResolvedValue({ from: "AU", to: "Mega Bangna" }),
+        }),
+      } as never);
+      vi.mocked(Timeslot.findById).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          lean: vi.fn().mockResolvedValue({ date: "2026-03-27", time: "08:00" }),
+        }),
+      } as never);
 
       await paymentService.reviewPayment(PAYMENT_ID, ADMIN_ID, {
         status: "failed",
@@ -174,10 +226,13 @@ describe("PaymentService", () => {
       expect(mockPayment.status).toBe("failed");
       expect(Booking.findByIdAndUpdate).toHaveBeenCalledWith(BOOKING_ID, { status: "pending_payment" });
       expect(reminderService.cancelForBooking).toHaveBeenCalledWith(BOOKING_ID);
-      expect(eventBus.emit).toHaveBeenCalledWith(Events.PAYMENT_FAILED, {
-        userId: USER_ID,
-        amount: 500,
-      });
+      expect(eventBus.emit).toHaveBeenCalledWith(
+        Events.PAYMENT_FAILED,
+        expect.objectContaining({
+          userId: USER_ID,
+          amount: 500,
+        })
+      );
     });
 
     it("throws when payment not found", async () => {

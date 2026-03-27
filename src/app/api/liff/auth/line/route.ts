@@ -30,19 +30,18 @@ export async function POST(req: NextRequest) {
     await connectDB();
     const lineUserId = verified.sub;
     const verifiedEmail = verified.email?.toLowerCase();
-    const fallbackEmail = `line_${lineUserId}@line.user`;
     const displayName =
       verified.name || parsed.data.displayName || "LINE User";
     const avatar = verified.picture || parsed.data.avatar || "";
 
-    const query = verifiedEmail
-      ? { $or: [{ lineUserId }, { email: verifiedEmail }] }
-      : { lineUserId };
+    let user = await User.findOne({ lineUserId });
+    if (!user && verifiedEmail) {
+      user = await User.findOne({ email: verifiedEmail });
+    }
 
-    let user = await User.findOne(query);
     if (!user) {
       user = await User.create({
-        email: verifiedEmail || fallbackEmail,
+        email: verifiedEmail,
         password: await bcrypt.hash(crypto.randomUUID(), 10),
         name: displayName,
         image: avatar,
@@ -55,7 +54,12 @@ export async function POST(req: NextRequest) {
       });
     } else {
       user.lineUserId = user.lineUserId || lineUserId;
-      user.authProvider = user.authProvider || "line";
+      if (user.authProvider !== "line" && !user.isAdmin) {
+        user.authProvider = "line";
+      }
+      if (!user.email && verifiedEmail) {
+        user.email = verifiedEmail;
+      }
       user.displayName = user.displayName || displayName;
       user.pictureUrl = user.pictureUrl || avatar;
       user.image = user.image || avatar;

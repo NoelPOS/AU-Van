@@ -58,6 +58,8 @@ vi.mock("@/lib/events", () => ({
 }));
 
 import Booking from "@/models/Booking";
+import Route from "@/models/Route";
+import Timeslot from "@/models/Timeslot";
 import { seatService } from "@/services/seat.service";
 import { eventBus, Events } from "@/lib/events";
 import { bookingService } from "@/services/booking.service";
@@ -128,6 +130,16 @@ describe("BookingService", () => {
         save: vi.fn().mockResolvedValue(undefined),
       };
       vi.mocked(Booking.findOne).mockResolvedValue(mockBooking as never);
+      vi.mocked(Route.findById).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          lean: vi.fn().mockResolvedValue({ from: "AU", to: "Mega Bangna" }),
+        }),
+      } as never);
+      vi.mocked(Timeslot.findById).mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          lean: vi.fn().mockResolvedValue({ date: "2026-03-27", time: "08:00" }),
+        }),
+      } as never);
 
       await bookingService.cancelBooking("b1", "user123");
 
@@ -188,6 +200,56 @@ describe("BookingService", () => {
       expect(mockBooking.passengerPhone).toBe("111");
       expect(mockBooking.pickupLocation).toBe("New Location");
       expect(mockBooking.save).toHaveBeenCalled();
+    });
+  });
+
+  describe("createBooking overlap conflict", () => {
+    it("rejects when user already has an overlapping active booking", async () => {
+      vi.mocked(Route.findById).mockResolvedValue({
+        _id: "route-1",
+        from: "AU",
+        to: "Mega Bangna",
+        status: "active",
+        price: 120,
+        duration: 90,
+      } as never);
+
+      vi.mocked(Timeslot.findById).mockResolvedValue({
+        _id: "timeslot-1",
+        routeId: "route-1",
+        date: "2026-03-27",
+        time: "10:00",
+        status: "active",
+      } as never);
+
+      const overlapChain = {
+        populate: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        lean: vi.fn().mockResolvedValue([
+          {
+            _id: "booking-existing",
+            bookingCode: "AUV-260327-ABCDE",
+            routeId: { from: "AU", to: "City Campus", duration: 60 },
+            timeslotId: { date: "2026-03-27", time: "10:30" },
+          },
+        ]),
+      };
+      vi.mocked(Booking.find).mockReturnValue(overlapChain as never);
+
+      await expect(
+        bookingService.createBooking("user-1", {
+          routeId: "route-1",
+          timeslotId: "timeslot-1",
+          seatIds: ["seat-1"],
+          passengerName: "John",
+          passengerPhone: "0812345678",
+          pickupLocation: "Dorm A",
+          paymentMethod: "cash",
+          sourceChannel: "liff",
+        })
+      ).rejects.toThrow("Booking conflict");
+
+      expect(seatService.confirmSeats).not.toHaveBeenCalled();
     });
   });
 });

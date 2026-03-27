@@ -23,6 +23,7 @@ import {
   useLockSeats,
   useReleaseSeats,
   useCreateBooking,
+  useMe,
 } from "@/hooks/queries";
 
 type Step = "seats" | "details";
@@ -57,6 +58,8 @@ export default function BookPage() {
   const lockSeats = useLockSeats();
   const releaseSeats = useReleaseSeats();
   const createBooking = useCreateBooking();
+  const { data: me } = useMe();
+  const [profilePrefilled, setProfilePrefilled] = useState(false);
 
   const loading = loadingRoute || loadingTimeslots;
 
@@ -99,6 +102,16 @@ export default function BookPage() {
   useEffect(() => {
     bookingIdempotencyKeyRef.current = "";
   }, [paymentMethod, form.passengerName, form.passengerPhone, form.pickupLocation, selectedTimeslot?._id, selectedSeats]);
+
+  useEffect(() => {
+    if (!me || profilePrefilled) return;
+    setForm((prev) => ({
+      passengerName: prev.passengerName || me.name || "",
+      passengerPhone: prev.passengerPhone || me.phone || "",
+      pickupLocation: prev.pickupLocation || me.defaultPickupLocation || "",
+    }));
+    setProfilePrefilled(true);
+  }, [me, profilePrefilled]);
 
   const selectedSeatCount = selectedSeats.length;
   const totalPrice = useMemo(() => (route ? route.price * selectedSeatCount : 0), [route, selectedSeatCount]);
@@ -162,7 +175,7 @@ export default function BookPage() {
   if (!route) {
     return (
       <div className="px-4 py-8">
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
           {error || "Route not found"}
         </p>
       </div>
@@ -252,7 +265,7 @@ export default function BookPage() {
       </div>
 
       {error && (
-        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
+        <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
           {error}
         </p>
       )}

@@ -124,32 +124,21 @@ export function RouteScheduleScreen() {
       <section className="mt-4 rounded-2xl border border-[#d6dcf4] bg-white p-3 shadow-[0_8px_20px_rgba(57,85,194,0.06)]">
         <div>
           <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-[#7682bb]">
-            From
-          </label>
-          <Input
-            value={selectedRoute?.from || "Assumption University"}
-            disabled
-            className="h-10 border-[#d9def4] bg-[#f6f8ff] text-xs text-[#22339a]"
-          />
-        </div>
-
-        <div className="mt-3">
-          <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-[#7682bb]">
-            To
+            Route
           </label>
           <Select value={selectedRouteId || undefined} onValueChange={setSelectedRouteId}>
             <SelectTrigger className="h-10 border-[#d9def4] text-xs text-[#22339a]">
-              <SelectValue placeholder="Choose destination" />
+              <SelectValue placeholder="Choose route" />
             </SelectTrigger>
             <SelectContent>
               {routes.length === 0 && (
                 <SelectItem value="none" disabled>
-                  No destination available
+                  No route available
                 </SelectItem>
               )}
               {routes.map((route) => (
                 <SelectItem key={route._id} value={route._id}>
-                  {route.to}
+                  {route.from} - {route.to}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -197,7 +186,7 @@ export function RouteScheduleScreen() {
         </div>
 
         {error && (
-          <p className="rounded-md border border-red-100 bg-red-50 px-2 py-1.5 text-[11px] text-red-600">{error}</p>
+          <p className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-[11px] text-amber-700">{error}</p>
         )}
 
         {loadingTimeslots && (

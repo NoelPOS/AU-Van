@@ -20,6 +20,7 @@ export const changePasswordSchema = z.object({
 export const updateProfileSchema = z.object({
   name: z.string().min(3).max(50).optional(),
   phone: z.string().optional(),
+  defaultPickupLocation: z.string().min(2).max(200).optional(),
 });
 
 export type SignupInput = z.infer<typeof signupSchema>;

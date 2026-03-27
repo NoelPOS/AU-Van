@@ -4,6 +4,8 @@ import { eventBus, Events } from "@/lib/events";
 import { auditLogService } from "@/services/audit-log.service";
 import { reminderService } from "@/services/reminder.service";
 import mongoose from "mongoose";
+import Route from "@/models/Route";
+import Timeslot from "@/models/Timeslot";
 
 interface ReviewPaymentInput {
   status: "pending" | "pending_review" | "completed" | "failed" | "refunded";
@@ -98,17 +100,40 @@ class PaymentService {
     if (input.status === "completed") {
       await Booking.findByIdAndUpdate(payment.bookingId, { status: "confirmed" });
       await reminderService.scheduleForBooking(String(payment.bookingId));
+      const booking = await Booking.findById(payment.bookingId).select("bookingCode routeId timeslotId").lean();
+      const [route, timeslot] = await Promise.all([
+        booking?.routeId ? Route.findById(booking.routeId).select("from to").lean() : null,
+        booking?.timeslotId ? Timeslot.findById(booking.timeslotId).select("date time").lean() : null,
+      ]);
       await eventBus.emit(Events.PAYMENT_COMPLETED, {
         userId: String(payment.userId),
+        bookingId: String(payment.bookingId),
+        bookingCode: booking?.bookingCode,
         amount: payment.amount,
         method: payment.method,
+        routeFrom: route?.from,
+        routeTo: route?.to,
+        date: timeslot?.date,
+        time: timeslot?.time,
       });
     } else if (input.status === "failed") {
       await Booking.findByIdAndUpdate(payment.bookingId, { status: "pending_payment" });
       await reminderService.cancelForBooking(String(payment.bookingId));
+      const booking = await Booking.findById(payment.bookingId).select("bookingCode routeId timeslotId").lean();
+      const [route, timeslot] = await Promise.all([
+        booking?.routeId ? Route.findById(booking.routeId).select("from to").lean() : null,
+        booking?.timeslotId ? Timeslot.findById(booking.timeslotId).select("date time").lean() : null,
+      ]);
       await eventBus.emit(Events.PAYMENT_FAILED, {
         userId: String(payment.userId),
+        bookingId: String(payment.bookingId),
+        bookingCode: booking?.bookingCode,
         amount: payment.amount,
+        method: payment.method,
+        routeFrom: route?.from,
+        routeTo: route?.to,
+        date: timeslot?.date,
+        time: timeslot?.time,
       });
     } else if (input.status === "pending_review") {
       await Booking.findByIdAndUpdate(payment.bookingId, { status: "payment_under_review" });

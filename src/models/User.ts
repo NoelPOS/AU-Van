@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface UserDocument extends Document {
-  email: string;
+  email?: string;
   password: string;
   lineUserId?: string;
   authProvider: "local" | "google" | "line";
@@ -10,6 +10,9 @@ export interface UserDocument extends Document {
   lineLinkedAt?: Date;
   name: string;
   phone?: string;
+  defaultPickupLocation?: string;
+  profileImageUrl?: string;
+  profileImageKey?: string;
   image?: string;
   isAdmin: boolean;
   createdAt: Date;
@@ -20,11 +23,8 @@ const UserSchema = new Schema<UserDocument>(
   {
     email: {
       type: String,
-      required: true,
-      unique: true,
       lowercase: true,
       trim: true,
-      index: true,
     },
     password: { type: String, required: true },
     lineUserId: { type: String, unique: true, sparse: true, index: true },
@@ -39,10 +39,28 @@ const UserSchema = new Schema<UserDocument>(
     lineLinkedAt: { type: Date },
     name: { type: String, required: true, trim: true, minlength: 3, maxlength: 50 },
     phone: { type: String, trim: true },
+    defaultPickupLocation: { type: String, trim: true, maxlength: 200 },
+    profileImageUrl: { type: String, trim: true },
+    profileImageKey: { type: String, trim: true },
     image: { type: String },
     isAdmin: { type: Boolean, default: false, index: true },
   },
   { timestamps: true }
+);
+
+UserSchema.pre("validate", function (next) {
+  if (this.authProvider !== "line" && !this.email) {
+    this.invalidate("email", "Email is required for non-LINE accounts");
+  }
+  next();
+});
+
+UserSchema.index(
+  { email: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { email: { $type: "string" } },
+  }
 );
 
 const User: Model<UserDocument> =

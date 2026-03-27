@@ -1,6 +1,6 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-guard";
-import { bookingService } from "@/services/booking.service";
+import { BookingConflictError, bookingService } from "@/services/booking.service";
 import { idempotencyService } from "@/services/idempotency.service";
 import { createBookingSchema } from "@/validators/booking.validator";
 import {
@@ -63,6 +63,12 @@ export async function POST(req: NextRequest) {
       await idempotencyService.failRequest(
         idempotencyRecordId,
         err instanceof Error ? err.message : "Unknown error"
+      );
+    }
+    if (err instanceof BookingConflictError) {
+      return NextResponse.json(
+        { success: false, error: err.message, data: err.details },
+        { status: err.statusCode }
       );
     }
     if (err instanceof Error) return errorResponse(err.message);

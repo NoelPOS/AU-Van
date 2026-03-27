@@ -1,5 +1,6 @@
 import Booking from "@/models/Booking";
 import ReminderJob from "@/models/ReminderJob";
+import Route from "@/models/Route";
 import Timeslot from "@/models/Timeslot";
 import User from "@/models/User";
 import { notificationService } from "@/services/notification.service";
@@ -138,6 +139,9 @@ class ReminderService {
         const payload = (job.payload || {}) as Record<string, unknown>;
         const departureDate = String(payload.departureDate || "");
         const departureTime = String(payload.departureTime || "");
+        const routeId = String(payload.routeId || "");
+        const route = routeId ? await Route.findById(routeId).select("from to").lean() : null;
+        const routeText = route ? `${route.from} -> ${route.to}` : "your route";
 
         await notificationService.notifyUser(String(job.userId), {
           type: "seat_reminder",
@@ -147,12 +151,17 @@ class ReminderService {
               : job.type === "departure_1h"
                 ? "Trip Reminder: 1 hour left"
                 : "Trip Reminder: departs today",
-          message: `Your van trip departs on ${departureDate} at ${departureTime}.`,
+          message: `Reminder: your ${routeText} trip departs on ${departureDate} at ${departureTime}.`,
           data: {
             bookingId: payload.bookingId,
+            routeFrom: route?.from,
+            routeTo: route?.to,
+            date: departureDate,
+            time: departureTime,
             departureDate,
             departureTime,
             reminderType: job.type,
+            action: "reminder",
           },
         });
 
