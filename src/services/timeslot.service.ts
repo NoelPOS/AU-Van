@@ -85,8 +85,9 @@ class TimeslotService {
       .lean();
   }
 
-  async getTimeslotsByRoutePaginated(routeId: string, page: number, limit: number) {
+  async getTimeslotsByRoutePaginated(routeId: string, page: number, limit: number, date?: string) {
     const query: Record<string, unknown> = { routeId, status: { $ne: "cancelled" } };
+    if (date) query.date = date;
     const [data, total] = await Promise.all([
       Timeslot.find(query)
         .populate("routeId", "from to slug price")

@@ -85,6 +85,8 @@ export default function AdminTimeslotsPage() {
   const [page, setPage] = useState(1);
   const [mode, setMode] = useState<Mode>("none");
   const [customTime, setCustomTime] = useState("");
+  const [routeQuery, setRouteQuery] = useState("");
+  const [tableDateFilter, setTableDateFilter] = useState("");
 
   // Single create form
   const [form, setForm] = useState({ routeId: "", date: "", time: "", totalSeats: 12 });
@@ -106,7 +108,24 @@ export default function AdminTimeslotsPage() {
   const activeFormRouteId = form.routeId || activeRoute;
   const activeBulkRouteId = bulk.routeId || activeRoute;
 
-  const { data: paginatedData } = useAdminTimeslots(activeRoute, page);
+  const filteredRoutes = useMemo(() => {
+    const normalizedQuery = routeQuery.trim().toLowerCase();
+    if (!normalizedQuery) return routes;
+    return routes.filter((route) => {
+      const label = `${route.from} ${route.to} ${route.slug}`.toLowerCase();
+      return label.includes(normalizedQuery);
+    });
+  }, [routeQuery, routes]);
+
+  const routeOptions = useMemo(() => {
+    if (!activeRoute) return filteredRoutes;
+    const activeRouteObject = routes.find((route) => route._id === activeRoute);
+    if (!activeRouteObject) return filteredRoutes;
+    if (filteredRoutes.some((route) => route._id === activeRoute)) return filteredRoutes;
+    return [activeRouteObject, ...filteredRoutes];
+  }, [activeRoute, filteredRoutes, routes]);
+
+  const { data: paginatedData } = useAdminTimeslots(activeRoute, page, tableDateFilter || undefined);
   const timeslots = paginatedData?.data ?? [];
   const totalPages = paginatedData?.totalPages ?? 1;
 
@@ -236,6 +255,67 @@ export default function AdminTimeslotsPage() {
             </Button>
           </div>
         </div>
+
+        {/* Browse filters */}
+        <Card className="rounded-2xl border-border/60">
+          <CardContent className="pt-6 grid gap-4 md:grid-cols-3">
+            <div>
+              <Label className="text-xs font-medium">Search Route</Label>
+              <Input
+                value={routeQuery}
+                onChange={(e) => setRouteQuery(e.target.value)}
+                placeholder="Type route, stop, or slug..."
+                className="mt-1.5 rounded-xl"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Showing {filteredRoutes.length} of {routes.length} route(s)
+              </p>
+              {routeQuery.trim() && filteredRoutes.length === 0 && (
+                <p className="mt-1 text-xs text-destructive">No routes match that search.</p>
+              )}
+            </div>
+            <div>
+              <Label className="text-xs font-medium">Selected Route</Label>
+              <select
+                value={activeRoute}
+                onChange={(e) => switchRoute(e.target.value)}
+                className="mt-1.5 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm"
+              >
+                {routeOptions.map((route) => (
+                  <option key={route._id} value={route._id}>
+                    {route.from}{" -> "}{route.to}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label className="text-xs font-medium">Filter Timeslots by Date</Label>
+              <div className="mt-1.5 flex gap-2">
+                <Input
+                  type="date"
+                  value={tableDateFilter}
+                  onChange={(e) => {
+                    setTableDateFilter(e.target.value);
+                    setPage(1);
+                  }}
+                  className="rounded-xl"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() => {
+                    setTableDateFilter("");
+                    setPage(1);
+                  }}
+                  disabled={!tableDateFilter}
+                >
+                  Clear
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Single create form */}
         {mode === "single" && (
@@ -455,18 +535,6 @@ export default function AdminTimeslotsPage() {
             </CardContent>
           </Card>
         )}
-
-        {/* Route tabs */}
-        <div className="flex gap-2 flex-wrap">
-          {routes.map((r) => (
-            <Button key={r._id}
-              variant={activeRoute === r._id ? "default" : "outline"}
-              size="sm" className="rounded-xl"
-              onClick={() => switchRoute(r._id)}>
-              {r.from}{" -> "}{r.to}
-            </Button>
-          ))}
-        </div>
 
         {/* Table */}
         {cancelTimeslot.error && (

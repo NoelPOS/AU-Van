@@ -26,13 +26,17 @@ export function useTimeslots(routeId: string, date?: string) {
   });
 }
 
-export function useAdminTimeslots(routeId: string, page = 1) {
+export function useAdminTimeslots(routeId: string, page = 1, date?: string) {
+  const params = new URLSearchParams();
+  params.set("routeId", routeId);
+  params.set("page", String(page));
+  params.set("limit", String(ADMIN_PAGE_LIMIT));
+  if (date) params.set("date", date);
+
   return useQuery({
-    queryKey: queryKeys.timeslots.adminList(routeId, page),
+    queryKey: queryKeys.timeslots.adminList(routeId, page, date),
     queryFn: () =>
-      api.get<PaginatedTimeslots>(
-        `/api/admin/timeslots?routeId=${routeId}&page=${page}&limit=${ADMIN_PAGE_LIMIT}`
-      ),
+      api.get<PaginatedTimeslots>(`/api/admin/timeslots?${params}`),
     enabled: !!routeId,
   });
 }

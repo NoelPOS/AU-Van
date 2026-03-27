@@ -12,11 +12,12 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const routeId = searchParams.get("routeId");
     if (!routeId) return errorResponse("routeId is required");
+    const date = searchParams.get("date") || undefined;
 
     const page = Math.max(1, Number(searchParams.get("page") || 1));
     const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit") || 15)));
 
-    const result = await timeslotService.getTimeslotsByRoutePaginated(routeId, page, limit);
+    const result = await timeslotService.getTimeslotsByRoutePaginated(routeId, page, limit, date);
     return successResponse(result);
   } catch (error) {
     return serverErrorResponse(error);
