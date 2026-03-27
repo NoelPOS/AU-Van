@@ -5,6 +5,7 @@ import type { CreateTimeslotInput, UpdateTimeslotInput, BulkCreateTimeslotInput 
 
 class TimeslotService {
   private static instance: TimeslotService;
+  private static readonly BULK_WRITE_CHUNK_SIZE = 250;
   private constructor() {}
 
   static getInstance(): TimeslotService {
@@ -116,30 +117,63 @@ class TimeslotService {
       current.setUTCDate(current.getUTCDate() + 1);
     }
 
-    let created = 0;
-    let skipped = 0;
+    const schedule = dates.flatMap((date) => input.times.map((time) => ({ date, time })));
+    if (schedule.length === 0) return { created: 0, skipped: 0 };
 
-    for (const date of dates) {
-      for (const time of input.times) {
-        const existing = await Timeslot.findOne({ routeId: input.routeId, date, time });
-        if (existing) {
-          skipped++;
-          continue;
-        }
-        const timeslot = await Timeslot.create({
-          routeId: input.routeId,
-          date,
-          time,
-          totalSeats: input.totalSeats,
-          bookedSeats: 0,
-          status: "active",
-        });
-        await seatService.createSeatsForTimeslot(String(timeslot._id), input.totalSeats);
-        created++;
-      }
+    const operations = schedule.map(({ date, time }) => ({
+      updateOne: {
+        filter: { routeId: input.routeId, date, time },
+        update: {
+          $setOnInsert: {
+            routeId: input.routeId,
+            date,
+            time,
+            totalSeats: input.totalSeats,
+            bookedSeats: 0,
+            status: "active" as const,
+          },
+        },
+        upsert: true,
+      },
+    }));
+
+    let created = 0;
+    const createdTimeslotIds: string[] = [];
+
+    for (let i = 0; i < operations.length; i += TimeslotService.BULK_WRITE_CHUNK_SIZE) {
+      const chunk = operations.slice(i, i + TimeslotService.BULK_WRITE_CHUNK_SIZE);
+      const result = await Timeslot.bulkWrite(chunk, { ordered: false });
+      created += result.upsertedCount ?? 0;
+
+      const upsertedIds = this.extractUpsertedIds(result);
+      if (upsertedIds.length > 0) createdTimeslotIds.push(...upsertedIds);
     }
 
-    return { created, skipped };
+    if (createdTimeslotIds.length > 0) {
+      await seatService.createSeatsForTimeslots(createdTimeslotIds, input.totalSeats);
+    }
+
+    return { created, skipped: schedule.length - created };
+  }
+
+  private extractUpsertedIds(result: {
+    upsertedIds?: Record<number, unknown>;
+    getUpsertedIds?: () => Array<{ _id: unknown }>;
+  }) {
+    if (typeof result.getUpsertedIds === "function") {
+      return result.getUpsertedIds().map((entry) => String(entry._id));
+    }
+
+    if (!result.upsertedIds) return [];
+
+    return Object.values(result.upsertedIds)
+      .map((entry) => {
+        if (entry && typeof entry === "object" && "_id" in entry) {
+          return String((entry as { _id: unknown })._id);
+        }
+        return String(entry);
+      })
+      .filter((id) => id !== "undefined" && id !== "null");
   }
 }
 

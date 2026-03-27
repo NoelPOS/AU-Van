@@ -4,6 +4,9 @@ import { timeslotService } from "@/services/timeslot.service";
 import { bulkCreateTimeslotSchema } from "@/validators/timeslot.validator";
 import { successResponse, errorResponse, serverErrorResponse, validationErrorResponse } from "@/lib/api-response";
 
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   try {
     const { error } = await requireAdmin();

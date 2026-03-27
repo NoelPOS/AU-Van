@@ -13,6 +13,7 @@ function generateSeatLabel(index: number): string {
 
 class SeatService {
   private static instance: SeatService;
+  private static readonly BULK_WRITE_CHUNK_SIZE = 500;
 
   private constructor() {}
 
@@ -24,16 +25,33 @@ class SeatService {
   }
 
   async createSeatsForTimeslot(timeslotId: string, totalSeats: number) {
+    return this.createSeatsForTimeslots([timeslotId], totalSeats);
+  }
 
+  async createSeatsForTimeslots(timeslotIds: string[], totalSeats: number) {
+    if (timeslotIds.length === 0 || totalSeats <= 0) return;
 
-    const seats = Array.from({ length: totalSeats }, (_, i) => ({
-      timeslotId,
-      seatNumber: i + 1,
-      label: generateSeatLabel(i),
-      status: "available" as const,
-    }));
+    const operations = timeslotIds.flatMap((timeslotId) =>
+      Array.from({ length: totalSeats }, (_, i) => ({
+        updateOne: {
+          filter: { timeslotId, seatNumber: i + 1 },
+          update: {
+            $setOnInsert: {
+              timeslotId,
+              seatNumber: i + 1,
+              label: generateSeatLabel(i),
+              status: "available" as const,
+            },
+          },
+          upsert: true,
+        },
+      }))
+    );
 
-    return Seat.insertMany(seats);
+    for (let i = 0; i < operations.length; i += SeatService.BULK_WRITE_CHUNK_SIZE) {
+      const chunk = operations.slice(i, i + SeatService.BULK_WRITE_CHUNK_SIZE);
+      await Seat.bulkWrite(chunk, { ordered: false });
+    }
   }
 
   async getSeatsForTimeslot(timeslotId: string) {
